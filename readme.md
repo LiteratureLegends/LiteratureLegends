@@ -1,4 +1,4 @@
-Literature Assistant Project - README Template
+Literature Assistant Project - README
 ===
 
 # Literature Assistant

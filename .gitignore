@@ -1,4 +1,11 @@
 .env
 .gitignore
-ignoretest
-ignoretest2
+IOS-SETUP.md
+
+# Xcode local files
+build/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+
+backend/

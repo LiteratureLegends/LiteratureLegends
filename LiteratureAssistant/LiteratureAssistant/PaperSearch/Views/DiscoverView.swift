@@ -70,26 +70,112 @@ struct DiscoverView: View {
         case .loading:
             ProgressView("Searching…")
         case .results:
-            List(viewModel.papers) { paper in
-                Text(paper.title)
-            }
-            .listStyle(.plain)
+            resultsList
         case .empty(let query):
-            ContentUnavailableView.search(text: query)
+            ContentUnavailableView(
+                "No papers found for “\(query)”",
+                systemImage: "doc.text.magnifyingglass",
+                description: Text(emptyHint)
+            )
         case .error(let error):
-            ContentUnavailableView(error.title, systemImage: "exclamationmark.triangle", description: Text(error.message))
+            ContentUnavailableView {
+                Label(error.title, systemImage: error == .offline ? "wifi.slash" : "exclamationmark.triangle")
+            } description: {
+                Text(error.message)
+            } actions: {
+                if error.isRetryable {
+                    Button("Retry") { viewModel.retry() }
+                        .buttonStyle(.borderedProminent)
+                }
+            }
+        }
+    }
+
+    private var resultsList: some View {
+        List {
+            Section {
+                ForEach(viewModel.papers) { paper in
+                    PaperRowView(paper: paper)
+                        .onAppear { viewModel.loadNextPageIfNeeded(currentPaper: paper) }
+                }
+            } header: {
+                resultsHeader
+            } footer: {
+                pageFooter
+            }
+        }
+        .listStyle(.plain)
+    }
+
+    private var resultsHeader: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            if let name = viewModel.matchedEntityName {
+                Text(viewModel.activeMode == .author ? "Showing works by \(name)" : "Showing works on \(name)")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .textCase(nil)
+            }
+            Text("\(viewModel.totalCount.formatted()) \(viewModel.totalCount == 1 ? "result" : "results")")
+                .textCase(nil)
+        }
+    }
+
+    @ViewBuilder
+    private var pageFooter: some View {
+        if viewModel.isLoadingNextPage {
+            ProgressView()
+                .frame(maxWidth: .infinity)
+                .padding()
+        } else if let error = viewModel.nextPageError {
+            VStack(spacing: 8) {
+                Text(error.message)
+                    .multilineTextAlignment(.center)
+                Button("Retry") { viewModel.loadNextPage() }
+                    .buttonStyle(.bordered)
+            }
+            .frame(maxWidth: .infinity)
+            .padding()
+        } else if !viewModel.hasMore, viewModel.papers.count > 5 {
+            Text("End of results")
+                .frame(maxWidth: .infinity)
+                .padding()
+        }
+    }
+
+    private var emptyHint: String {
+        switch viewModel.activeMode {
+        case .doi: "Check the DOI, or search by title keywords instead."
+        case .author: "Check the spelling of the author's name, or try a keyword search."
+        case .topic: "Try a broader topic, or switch to keyword search."
+        default: "Try different keywords or another search mode."
         }
     }
 }
 
-#Preview("Results") {
+@MainActor
+private func previewDiscover(_ behavior: MockPaperSearchService.Behavior, query: String = "graph neural networks") -> DiscoverView {
+    let viewModel = DiscoverViewModel(service: MockPaperSearchService(behavior: behavior))
+    viewModel.query = query
+    viewModel.submit()
+    return DiscoverView(viewModel: viewModel)
+}
+
+#Preview("Idle") {
     DiscoverView(service: MockPaperSearchService())
 }
 
+#Preview("Results") {
+    previewDiscover(.results)
+}
+
 #Preview("Empty") {
-    DiscoverView(service: MockPaperSearchService(behavior: .empty))
+    previewDiscover(.empty, query: "zzqxv")
 }
 
 #Preview("Error") {
-    DiscoverView(service: MockPaperSearchService(behavior: .failure(.rateLimited(retryAfterSeconds: 30))))
+    previewDiscover(.failure(.rateLimited(retryAfterSeconds: 30)))
+}
+
+#Preview("Offline") {
+    previewDiscover(.failure(.offline))
 }

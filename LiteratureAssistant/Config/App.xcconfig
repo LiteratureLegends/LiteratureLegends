@@ -1,0 +1,12 @@
+// App.xcconfig: base build settings for the LiteratureAssistant app target.
+// Linked as the target's base configuration for Debug and Release.
+
+// Info.plist with custom keys, merged with the generated plist (GENERATE_INFOPLIST_FILE = YES).
+// It lives outside the synchronized LiteratureAssistant/ folder, so it is never copied as a resource.
+INFOPLIST_FILE = Config/Info.plist
+
+// Default so the build works without secrets; the app then shows "API key needed".
+OPENALEX_API_KEY =
+
+// Local, gitignored secrets override the default above. `#include?` means the file is optional.
+#include? "Secrets.xcconfig"

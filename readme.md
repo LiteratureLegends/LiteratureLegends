@@ -112,6 +112,19 @@ In this section, we document all granular level user stories based on the screen
   * Leads to [**Discover Screen**]
   * Leads to [**Library**]
   * Leads to [**Login Screen**]
+## Developer Setup
+
+### OpenAlex API key (paper search)
+
+Paper search calls the [OpenAlex API](https://help.openalex.org/api/), which requires a free API key. Each teammate uses their own key, and keys are never committed.
+
+1. Get a free key at <https://openalex.org/settings/api> and click the activation link OpenAlex emails you.
+2. Copy the template: `cp LiteratureAssistant/Config/Secrets.example.xcconfig LiteratureAssistant/Config/Secrets.xcconfig`
+3. Open `Secrets.xcconfig` and replace `YOUR_OPENALEX_API_KEY` with your key: `OPENALEX_API_KEY = abc123...`
+4. In Xcode, clean the build folder (Product › Clean Build Folder, ⇧⌘K) and run.
+
+`Secrets.xcconfig` is gitignored. Run `git status` before committing to make sure it never shows up. Without a key, the app shows an "OpenAlex API key needed" screen instead of crashing. A free key has a $1/day budget (about 1,000 searches). See `LiteratureAssistant/LiteratureAssistant/PaperSearch/PORTING.md` for how the feature is wired into the project.
+
 ## Wireframes
 ![Handwritten](images/Wireframe1.jpeg)
 ![Handwritten](images/Wireframe2.jpeg)

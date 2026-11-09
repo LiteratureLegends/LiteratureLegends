@@ -11,7 +11,9 @@ import SwiftUI
 struct LiteratureAssistantApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            // TODO: Discover is temporarily the root view until the tab bar
+            // (Discover / Library / Profile) exists. Move PaperSearchRootView into the Discover tab then.
+            PaperSearchRootView()
         }
     }
 }

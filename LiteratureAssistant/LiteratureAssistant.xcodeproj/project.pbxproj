@@ -19,11 +19,26 @@
 /* Begin PBXFileReference section */
 		4E26229C30A228380082E50D /* LiteratureAssistant.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LiteratureAssistant.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4E2622B030A228390082E50D /* LiteratureAssistantTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LiteratureAssistantTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4E2622C030A228390082E50D /* App.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = App.xcconfig; sourceTree = "<group>"; };
+		4E2622C130A228390082E50D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		4E2622C230A228390082E50D /* Exceptions for "LiteratureAssistant" folder in "LiteratureAssistant" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				PaperSearch/PORTING.md,
+			);
+			target = 4E26229B30A228380082E50D /* LiteratureAssistant */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		4E26229E30A228380082E50D /* LiteratureAssistant */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				4E2622C230A228390082E50D /* Exceptions for "LiteratureAssistant" folder in "LiteratureAssistant" target */,
+			);
 			path = LiteratureAssistant;
 			sourceTree = "<group>";
 		};
@@ -35,14 +50,14 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		4E2622B430A228390082E50D /* Frameworks */ = {
+		4E26229930A228380082E50D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		4E26229930A228380082E50D /* Frameworks */ = {
+		4E2622B430A228390082E50D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -55,6 +70,7 @@
 		4E26229330A228380082E50D = {
 			isa = PBXGroup;
 			children = (
+				4E2622C330A228390082E50D /* Config */,
 				4E26229E30A228380082E50D /* LiteratureAssistant */,
 				4E2622B130A228390082E50D /* LiteratureAssistantTests */,
 				4E26229D30A228380082E50D /* Products */,
@@ -68,6 +84,15 @@
 				4E2622B030A228390082E50D /* LiteratureAssistantTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		4E2622C330A228390082E50D /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				4E2622C030A228390082E50D /* App.xcconfig */,
+				4E2622C130A228390082E50D /* Info.plist */,
+			);
+			path = Config;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -158,14 +183,14 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		4E2622B530A228390082E50D /* Resources */ = {
+		4E26229A30A228380082E50D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		4E26229A30A228380082E50D /* Resources */ = {
+		4E2622B530A228390082E50D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -175,14 +200,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		4E2622B330A228390082E50D /* Sources */ = {
+		4E26229830A228380082E50D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		4E26229830A228380082E50D /* Sources */ = {
+		4E2622B330A228390082E50D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -323,6 +348,7 @@
 		};
 		4E2622A830A228390082E50D /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 4E2622C030A228390082E50D /* App.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -355,6 +381,7 @@
 		};
 		4E2622A930A228390082E50D /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 4E2622C030A228390082E50D /* App.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;

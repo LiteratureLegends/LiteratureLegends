@@ -43,7 +43,8 @@ final class DiscoverViewModel {
     let minimumQueryLength = 3
     let debounceInterval: Duration
 
-    private let service: any PaperSearchService
+    /// Shared with the detail screen so it uses the same backend.
+    let service: any PaperSearchService
     private var searchTask: Task<Void, Never>?
     private var nextPageTask: Task<Void, Never>?
     private var currentPage = 1

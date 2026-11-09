@@ -36,6 +36,9 @@ struct DiscoverView: View {
             .onSubmit(of: .search) { viewModel.submit() }
             .onChange(of: viewModel.query) { viewModel.queryDidChange() }
             .onChange(of: viewModel.mode) { viewModel.modeDidChange() }
+            .navigationDestination(for: Paper.self) { paper in
+                PaperDetailView(paper: paper, service: viewModel.service)
+            }
         }
     }
 
@@ -95,8 +98,10 @@ struct DiscoverView: View {
         List {
             Section {
                 ForEach(viewModel.papers) { paper in
-                    PaperRowView(paper: paper)
-                        .onAppear { viewModel.loadNextPageIfNeeded(currentPaper: paper) }
+                    NavigationLink(value: paper) {
+                        PaperRowView(paper: paper)
+                    }
+                    .onAppear { viewModel.loadNextPageIfNeeded(currentPaper: paper) }
                 }
             } header: {
                 resultsHeader

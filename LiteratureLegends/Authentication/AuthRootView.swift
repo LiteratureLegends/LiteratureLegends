@@ -81,6 +81,12 @@ private struct AuthenticatedHomeView: View {
 
                 Section("Current development build") {
                     NavigationLink(
+                        "Open scanner"
+                    ) {
+                        ScannerView()
+                    }
+
+                    NavigationLink(
                         "Open Luis's profile preview"
                     ) {
                         ProfileView(

@@ -33,20 +33,20 @@ In this section, we document high-level user stories that are required and optio
 
 **Required Must-have Stories**
 
-* User can register an account, login, view personal workspace stats ( saved papers, scans count, active projects), and logout.
-* User can query academic papers by kewywords, topic, author name, or DOI cia external open API e.g., OpenAlex / Semantic Scholar).
-* User can point the camera at a physical printed paper or screen to scan text, extract titles/DOIs, or capture specific paragraphs using Apple VisionKit.
-* User can inspect verified paper details, including title, authors, publication, venue, citation counts, and extracted raw text.
-* User can ask specific questions about the scanned/selected document and receive responses that cite traceable sources.
-* User can create named progect folders and save papers or scans directly into them.
-* User saved papers, chat history, and project folders persist across sessions via a cloud backend.
+* [X] User can register an account, login, view personal workspace stats ( saved papers, scans count, active projects), and logout.
+* [X] User can query academic papers by keywords, topic, author name, or DOI cia external open API e.g., OpenAlex / Semantic Scholar).
+* [] User can point the camera at a physical printed paper or screen to scan text, extract titles/DOIs, or capture specific paragraphs using Apple VisionKit.
+* [X] User can inspect verified paper details, including title, authors, publication, venue, citation counts, and extracted raw text.
+* [] User can ask specific questions about the scanned/selected document and receive responses that cite traceable sources.
+* [] User can create named project folders and save papers or scans directly into them.
+* [] User saved papers, chat history, and project folders persist across sessions via a cloud backend.
 
 **Optional Nice-to-have Stories**
 
-* User can scan barcoes or QR codes printed on journals or instant identification.
-* User can invite classmates to a project folder for shared research and paper collections.
-* User can run cross-paper AI synthesis across an entire collectio of papers to identify conflicting findings and research gaps.
-* User can download and read fill-text PDFs natively inside an in-app viewer.
+* [] User can scan barcoes or QR codes printed on journals or instant identification.
+* [] User can invite classmates to a project folder for shared research and paper collections.
+* [] User can run cross-paper AI synthesis across an entire collectio of papers to identify conflicting findings and research gaps.
+* [] User can download and read fill-text PDFs natively inside an in-app viewer.
 
 ### 2. Screen Archetypes
 In this section, we document all granular level user stories based on the screen archetype.

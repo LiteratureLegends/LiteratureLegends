@@ -42,7 +42,17 @@ In this section, we document high-level user stories that are required and optio
 - [ ] User saved papers, chat history, and project folders persist across sessions via a cloud backend.
 
 ## Build Progress
+
+Video
 [Video](https://www.loom.com/share/11b503695bc846bc837afc6eb960d0c5)
+
+Login Screen
+
+![Login](https://i.imgur.com/GVxxVwV.png)
+
+Signup Screen
+
+![Signup](https://i.imgur.com/gmJp0kk.png)
 
 **Optional Nice-to-have Stories**
 

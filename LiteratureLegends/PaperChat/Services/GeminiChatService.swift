@@ -16,10 +16,13 @@ final class GeminiChatService: ChatService {
     static let baseURL = URL(string: "https://generativelanguage.googleapis.com/v1beta/models")!
     /// Caps answer length. On Gemini 3.x this budget is shared with the model's thinking tokens.
     static let maxOutputTokens = 2048
-    /// `gemini-3.8-flash` supports LOW/MEDIUM/HIGH (not MINIMAL); LOW keeps answers fast and cheap.
+    /// LOW keeps answers fast and cheap. Live-checked 2026-11-20: gemini-3.5-flash-lite (the default)
+    /// and gemini-3.8-flash both accept it; gemini-3.8-flash rejects MINIMAL.
     static let thinkingLevel = "LOW"
     /// Earlier messages sent as context, to bound request size.
     static let maxHistoryMessages = 10
+    /// Per-request timeout. With the single retry, the worst case is about 30 + 2 + 30 seconds.
+    static let requestTimeout: TimeInterval = 30
     /// Wait before the single automatic retry after HTTP 503 (overloaded) or a timeout.
     static let defaultRetryDelay: Duration = .seconds(2)
 
@@ -89,7 +92,7 @@ final class GeminiChatService: ChatService {
 
         var request = URLRequest(url: Self.baseURL.appendingPathComponent("\(model):generateContent"))
         request.httpMethod = "POST"
-        request.timeoutInterval = 60
+        request.timeoutInterval = Self.requestTimeout
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(apiKey, forHTTPHeaderField: "x-goog-api-key")
         // Lets the key be restricted to this iOS app in Google Cloud Console.

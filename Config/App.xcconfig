@@ -11,7 +11,7 @@ ONLY_ACTIVE_ARCH[config=Debug] = YES
 
 // Public, non-secret settings. In xcconfig files "//" starts a comment, hence the "/$()/" trick.
 PARSE_SERVER_URL = https:/$()/parseapi.back4app.com
-GEMINI_MODEL = gemini-3.8-flash
+GEMINI_MODEL = gemini-3.5-flash-lite
 
 // Empty defaults so the app builds without secrets; it then shows setup messages instead of crashing.
 OPENALEX_API_KEY =

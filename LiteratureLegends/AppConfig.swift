@@ -17,7 +17,7 @@ enum AppConfig {
     static let parseRESTAPIKeyInfoKey = "ParseRESTAPIKey"
 
     static let placeholderAPIKey = "YOUR_OPENALEX_API_KEY"
-    static let defaultGeminiModel = "gemini-3.8-flash"
+    static let defaultGeminiModel = "gemini-3.5-flash-lite"
 
     /// The OpenAlex API key, or nil if it's missing or still the placeholder.
     static var openAlexAPIKey: String? { value(for: openAlexAPIKeyInfoKey) }

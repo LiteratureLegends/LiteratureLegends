@@ -61,6 +61,12 @@ final class GeminiChatServiceTests: XCTestCase {
         XCTAssertNil(request.url?.query)
     }
 
+    func testRequestTimeoutIsThirtySeconds() throws {
+        let request = try makeService().makeRequest(question: "Q", paper: paper, history: [])
+        XCTAssertEqual(GeminiChatService.requestTimeout, 30)
+        XCTAssertEqual(request.timeoutInterval, 30)
+    }
+
     func testBodyHasSystemInstructionWithPaperContext() throws {
         let body = try bodyJSON(makeService().makeRequest(question: "Q", paper: paper, history: []))
         let system = try XCTUnwrap(body["systemInstruction"] as? [String: Any])

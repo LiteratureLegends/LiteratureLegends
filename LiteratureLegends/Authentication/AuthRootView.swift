@@ -80,6 +80,8 @@ private struct AuthenticatedHomeView: View {
                 }
 
                 Section("Current development build") {
+                    NavigationLink("Discover") { DiscoverPageView(user: user) }
+
                     NavigationLink(
                         "Open Luis's profile preview"
                     ) {

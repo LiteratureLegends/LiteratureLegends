@@ -2,43 +2,47 @@
 //  DiscoverView.swift
 //  LiteratureLegends · PaperSearch
 //
-//  Discover screen from images/Wireframe2.jpeg: "Find your next idea" + search.
+//  Search part of the Discover screen (images/Wireframe2.jpeg): search bar, mode picker,
+//  results. It has no NavigationStack of its own, so it can be pushed onto the app's stack;
+//  `home` is shown while the search field is empty (DiscoverPageView passes the banner and
+//  Continue Researching there).
 //
 
 import SwiftUI
 
-struct DiscoverView: View {
+struct DiscoverView<Home: View>: View {
     @State private var viewModel: DiscoverViewModel
+    private let home: Home
 
-    init(service: any PaperSearchService) {
+    init(service: any PaperSearchService, @ViewBuilder home: () -> Home) {
         _viewModel = State(initialValue: DiscoverViewModel(service: service))
+        self.home = home()
     }
 
-    init(viewModel: DiscoverViewModel) {
+    init(viewModel: DiscoverViewModel, @ViewBuilder home: () -> Home) {
         _viewModel = State(initialValue: viewModel)
+        self.home = home()
     }
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                modePicker
-                content
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            .navigationTitle("Find your next idea")
-            .searchable(
-                text: $viewModel.query,
-                placement: .navigationBarDrawer(displayMode: .always),
-                prompt: "Papers, topics, authors, DOI…"
-            )
-            .autocorrectionDisabled()
-            .textInputAutocapitalization(.never)
-            .onSubmit(of: .search) { viewModel.submit() }
-            .onChange(of: viewModel.query) { viewModel.queryDidChange() }
-            .onChange(of: viewModel.mode) { viewModel.modeDidChange() }
-            .navigationDestination(for: Paper.self) { paper in
-                PaperDetailView(paper: paper, service: viewModel.service)
-            }
+        VStack(spacing: 0) {
+            modePicker
+            content
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .navigationTitle("Find your next idea")
+        .searchable(
+            text: $viewModel.query,
+            placement: .navigationBarDrawer(displayMode: .always),
+            prompt: "Papers, topics, authors, DOI…"
+        )
+        .autocorrectionDisabled()
+        .textInputAutocapitalization(.never)
+        .onSubmit(of: .search) { viewModel.submit() }
+        .onChange(of: viewModel.query) { viewModel.queryDidChange() }
+        .onChange(of: viewModel.mode) { viewModel.modeDidChange() }
+        .navigationDestination(for: Paper.self) { paper in
+            PaperDetailView(paper: paper, service: viewModel.service)
         }
     }
 
@@ -64,11 +68,13 @@ struct DiscoverView: View {
     @ViewBuilder
     private var content: some View {
         switch viewModel.state {
+        case .idle where viewModel.trimmedQuery.isEmpty:
+            home
         case .idle:
             ContentUnavailableView(
-                "Search OpenAlex",
-                systemImage: "magnifyingglass",
-                description: Text("Find papers by keyword, topic, author name, or DOI.")
+                "Keep typing…",
+                systemImage: "character.cursor.ibeam",
+                description: Text("Type at least \(viewModel.minimumQueryLength) characters, or tap Search.")
             )
         case .loading:
             ProgressView("Searching…")
@@ -157,16 +163,37 @@ struct DiscoverView: View {
     }
 }
 
+/// The standalone idle screen, used when there is no Discover home content.
+struct DiscoverSearchPrompt: View {
+    var body: some View {
+        ContentUnavailableView(
+            "Search OpenAlex",
+            systemImage: "magnifyingglass",
+            description: Text("Find papers by keyword, topic, author name, or DOI.")
+        )
+    }
+}
+
+extension DiscoverView where Home == DiscoverSearchPrompt {
+    init(service: any PaperSearchService) {
+        self.init(service: service) { DiscoverSearchPrompt() }
+    }
+
+    init(viewModel: DiscoverViewModel) {
+        self.init(viewModel: viewModel) { DiscoverSearchPrompt() }
+    }
+}
+
 @MainActor
-private func previewDiscover(_ behavior: MockPaperSearchService.Behavior, query: String = "graph neural networks") -> DiscoverView {
+private func previewDiscover(_ behavior: MockPaperSearchService.Behavior, query: String = "graph neural networks") -> some View {
     let viewModel = DiscoverViewModel(service: MockPaperSearchService(behavior: behavior))
     viewModel.query = query
     viewModel.submit()
-    return DiscoverView(viewModel: viewModel)
+    return NavigationStack { DiscoverView(viewModel: viewModel) }
 }
 
 #Preview("Idle") {
-    DiscoverView(service: MockPaperSearchService())
+    NavigationStack { DiscoverView(service: MockPaperSearchService()) }
 }
 
 #Preview("Results") {

@@ -17,7 +17,9 @@ struct PaperSearchRootView: View {
 
     var body: some View {
         if let apiKey {
-            DiscoverView(service: OpenAlexService(apiKey: apiKey))
+            NavigationStack {
+                DiscoverView(service: OpenAlexService(apiKey: apiKey))
+            }
         } else {
             MissingAPIKeyView()
         }

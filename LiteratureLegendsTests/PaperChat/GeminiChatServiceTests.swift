@@ -34,7 +34,8 @@ final class GeminiChatServiceTests: XCTestCase {
 
     private func makeService(apiKey: String?? = nil) -> GeminiChatService {
         GeminiChatService(apiKey: apiKey ?? self.apiKey, model: "gemini-3.8-flash",
-                          session: MockURLProtocol.makeSession(), bundleIdentifier: "com.example.LiteratureLegends")
+                          session: MockURLProtocol.makeSession(), bundleIdentifier: "com.example.LiteratureLegends",
+                          retryDelay: .zero)
     }
 
     private func bodyJSON(_ request: URLRequest) throws -> [String: Any] {
@@ -181,6 +182,55 @@ final class GeminiChatServiceTests: XCTestCase {
         XCTAssertThrowsError(try GeminiChatService.parseReply(json("not json"))) {
             XCTAssertEqual($0 as? ChatError, .unexpectedResponse)
         }
+    }
+
+    // MARK: Retry
+
+    private let okBody = #"{"candidates":[{"content":{"parts":[{"text":"Answer [1]."}]},"finishReason":"STOP"}]}"#
+
+    /// Fails the first request with `firstFailure`, then answers normally.
+    private func failOnceThenAnswer(_ firstFailure: @escaping MockURLProtocol.Handler) {
+        let ok = MockURLProtocol.respond(data: json(okBody))
+        MockURLProtocol.handler = { request in
+            MockURLProtocol.requests.count == 1 ? try firstFailure(request) : try ok(request)
+        }
+    }
+
+    func test503IsRetriedOnceThenSucceeds() async throws {
+        failOnceThenAnswer(MockURLProtocol.respond(status: 503, data: json("{}")))
+        let reply = try await makeService().answer(question: "Q", about: paper, history: [])
+        XCTAssertEqual(reply.text, "Answer [1].")
+        XCTAssertEqual(MockURLProtocol.requests.count, 2)
+    }
+
+    func testTimeoutIsRetriedOnceThenSucceeds() async throws {
+        failOnceThenAnswer(MockURLProtocol.fail(with: .timedOut))
+        let reply = try await makeService().answer(question: "Q", about: paper, history: [])
+        XCTAssertEqual(reply.text, "Answer [1].")
+        XCTAssertEqual(MockURLProtocol.requests.count, 2)
+    }
+
+    func testRetriesOnlyOnceThenShowsTheError() async {
+        MockURLProtocol.handler = MockURLProtocol.respond(status: 503, data: json("{}"))
+        await assertError(.serviceBusy)
+        XCTAssertEqual(MockURLProtocol.requests.count, 2)
+    }
+
+    func testOtherErrorsAreNotRetried() async {
+        for (handler, expected) in [
+            (MockURLProtocol.respond(status: 429, data: json("{}")), ChatError.quotaExceeded),
+            (MockURLProtocol.respond(status: 500, data: json("{}")), .server(statusCode: 500)),
+            (MockURLProtocol.fail(with: .notConnectedToInternet), .offline),
+        ] {
+            MockURLProtocol.reset()
+            MockURLProtocol.handler = handler
+            await assertError(expected)
+            XCTAssertEqual(MockURLProtocol.requests.count, 1, "\(expected) should not be retried")
+        }
+    }
+
+    func testDefaultRetryDelayIsAboutTwoSeconds() {
+        XCTAssertEqual(GeminiChatService.defaultRetryDelay, .seconds(2))
     }
 
     // MARK: Error mapping

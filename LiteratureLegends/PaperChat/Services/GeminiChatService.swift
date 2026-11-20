@@ -20,6 +20,8 @@ final class GeminiChatService: ChatService {
     static let thinkingLevel = "LOW"
     /// Earlier messages sent as context, to bound request size.
     static let maxHistoryMessages = 10
+    /// Wait before the single automatic retry after HTTP 503 (overloaded) or a timeout.
+    static let defaultRetryDelay: Duration = .seconds(2)
 
     static let systemInstruction = """
     You are a research assistant for students. Answer only from the provided paper information. \
@@ -31,23 +33,41 @@ final class GeminiChatService: ChatService {
     private let model: String
     private let session: URLSession
     private let bundleIdentifier: String?
+    private let retryDelay: Duration
 
     init(
         apiKey: String? = AppConfig.geminiAPIKey,
         model: String = AppConfig.geminiModel,
         session: URLSession = .shared,
-        bundleIdentifier: String? = Bundle.main.bundleIdentifier
+        bundleIdentifier: String? = Bundle.main.bundleIdentifier,
+        retryDelay: Duration = GeminiChatService.defaultRetryDelay
     ) {
         self.apiKey = apiKey
         self.model = model
         self.session = session
         self.bundleIdentifier = bundleIdentifier
+        self.retryDelay = retryDelay
     }
 
     var isConfigured: Bool { apiKey != nil }
 
     func answer(question: String, about paper: Paper, history: [ChatMessage]) async throws -> ChatReply {
         let request = try makeRequest(question: question, paper: paper, history: history)
+        do {
+            return try await send(request)
+        } catch let error as ChatError where Self.isRetryable(error) {
+            // Gemini returns 503 or stalls when overloaded; one retry after a short wait often succeeds.
+            try await Task.sleep(for: retryDelay)
+            return try await send(request)
+        }
+    }
+
+    /// Only transient overload errors are retried, and only once.
+    static func isRetryable(_ error: ChatError) -> Bool {
+        error == .serviceBusy || error == .timedOut
+    }
+
+    private func send(_ request: URLRequest) async throws -> ChatReply {
         let data: Data
         let response: URLResponse
         do {

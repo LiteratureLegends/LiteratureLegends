@@ -2,7 +2,8 @@
 //  PaperDetailView.swift
 //  LiteratureLegends · PaperSearch
 //
-//  Drill-down for one search result (#15). "Save to project" is intentionally not here yet.
+//  Drill-down for one search result (#15), with "Ask about this paper" (AI chat).
+//  "Save to project" is intentionally not here yet.
 //
 
 import SwiftUI
@@ -26,6 +27,7 @@ struct PaperDetailView: View {
                 authorsSection
                 metadataSection
                 abstractSection
+                askSection
 
                 if let url = paper.openURL {
                     Link(destination: url) {
@@ -108,6 +110,29 @@ struct PaperDetailView: View {
                             .font(.footnote)
                     }
                 }
+            }
+        }
+    }
+
+    /// The AI answers only from the paper's information, so it needs at least an abstract.
+    private var askSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            NavigationLink {
+                PaperChatView(paper: paper)
+            } label: {
+                Label("Ask about this paper", systemImage: "sparkles")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+            .disabled(paper.abstract == nil)
+
+            if paper.abstract == nil {
+                Text(viewModel.isLoadingDetails
+                     ? "Loading the abstract…"
+                     : "Not available: this paper has no abstract for the AI to read.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
         }
     }

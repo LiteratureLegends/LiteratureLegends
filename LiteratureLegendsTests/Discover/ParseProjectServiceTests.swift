@@ -127,6 +127,21 @@ final class ParseProjectServiceTests: XCTestCase {
         await assertError(.offline)
     }
 
+    func testConnectionLostMapsToOffline() async {
+        MockURLProtocol.handler = MockURLProtocol.fail(with: .networkConnectionLost)
+        await assertError(.offline)
+    }
+
+    func testTimeoutIsNotOffline() async {
+        MockURLProtocol.handler = MockURLProtocol.fail(with: .timedOut)
+        await assertError(.timedOut)
+    }
+
+    func testOtherURLErrorKeepsItsCode() async {
+        MockURLProtocol.handler = MockURLProtocol.fail(with: .cannotFindHost)
+        await assertError(.network(code: URLError.Code.cannotFindHost.rawValue))
+    }
+
     func testMalformedBodyMapsToUnexpectedResponse() async {
         MockURLProtocol.handler = MockURLProtocol.respond(data: json(#"{"oops":true}"#))
         await assertError(.unexpectedResponse)

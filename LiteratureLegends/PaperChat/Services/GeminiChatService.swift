@@ -158,6 +158,8 @@ final class GeminiChatService: ChatService {
             return .invalidAPIKey
         case 400 where text.localizedCaseInsensitiveContains("API key") || text.contains("API_KEY_INVALID"):
             return .invalidAPIKey
+        case 503:
+            return .serviceBusy
         default:
             return .server(statusCode: status)
         }

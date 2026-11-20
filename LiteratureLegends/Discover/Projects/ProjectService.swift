@@ -28,31 +28,34 @@ enum ProjectServiceError: Error, Equatable, Sendable {
     case notLoggedIn
     /// Parse error 209: the session token is invalid or expired.
     case sessionExpired
+    /// No internet connection (only `.notConnectedToInternet` / `.networkConnectionLost`).
     case offline
+    case timedOut
+    /// Any other URLError (DNS, TLS, cannot connect, ...), with its code for debugging.
+    case network(code: Int)
     case server(statusCode: Int)
     case unexpectedResponse
 
     init(_ error: Error) {
         if let error = error as? ProjectServiceError {
             self = error
-        } else if let urlError = error as? URLError, Self.offlineCodes.contains(urlError.code) {
-            self = .offline
+        } else if let urlError = error as? URLError {
+            switch urlError.code {
+            case .notConnectedToInternet, .networkConnectionLost: self = .offline
+            case .timedOut: self = .timedOut
+            default: self = .network(code: urlError.code.rawValue)
+            }
         } else {
             self = .unexpectedResponse
         }
     }
-
-    private static let offlineCodes: Set<URLError.Code> = [
-        .notConnectedToInternet, .networkConnectionLost, .timedOut,
-        .cannotFindHost, .cannotConnectToHost, .dnsLookupFailed, .dataNotAllowed,
-    ]
 
     var title: String {
         switch self {
         case .notConfigured: "Back4App not set up"
         case .notLoggedIn, .sessionExpired: "Please log in again"
         case .offline: "You're offline"
-        case .server, .unexpectedResponse: "Couldn't load projects"
+        case .timedOut, .network, .server, .unexpectedResponse: "Couldn't load projects"
         }
     }
 
@@ -64,11 +67,24 @@ enum ProjectServiceError: Error, Equatable, Sendable {
             "Your session has expired. Log out and log back in to see your projects."
         case .offline:
             "Check your internet connection and try again."
+        case .timedOut:
+            "The server took too long to respond. Please try again."
+        case .network(let code):
+            debugSuffixed("Couldn't reach the server. Please try again.", "URLError \(code)")
         case .server(let statusCode):
             "The server had a problem (HTTP \(statusCode)). Please try again."
         case .unexpectedResponse:
             "Something went wrong. Please try again."
         }
+    }
+
+    /// Adds the error code in DEBUG builds only.
+    private func debugSuffixed(_ message: String, _ code: String) -> String {
+        #if DEBUG
+        return "\(message) [\(code)]"
+        #else
+        return message
+        #endif
     }
 
     /// Retrying can't fix missing configuration.

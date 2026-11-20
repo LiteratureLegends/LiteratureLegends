@@ -46,7 +46,14 @@ enum ChatError: Error, Equatable, Sendable {
     case invalidAPIKey
     /// 429: rate limit or free-tier quota reached.
     case quotaExceeded
+    /// No internet connection (only `.notConnectedToInternet` / `.networkConnectionLost`).
     case offline
+    /// The request took longer than its timeout; Gemini can stall like this when it is overloaded.
+    case timedOut
+    /// 503: Gemini is overloaded ("model is currently experiencing high demand").
+    case serviceBusy
+    /// Any other URLError (DNS, TLS, cannot connect, ...), with its code for debugging.
+    case network(code: Int)
     /// The model declined to answer (safety or policy block).
     case blocked
     /// The response had no text.
@@ -57,19 +64,25 @@ enum ChatError: Error, Equatable, Sendable {
     init(_ error: Error) {
         if let error = error as? ChatError {
             self = error
-        } else if let urlError = error as? URLError, Self.offlineCodes.contains(urlError.code) {
-            self = .offline
+        } else if let urlError = error as? URLError {
+            switch urlError.code {
+            case .notConnectedToInternet, .networkConnectionLost: self = .offline
+            case .timedOut: self = .timedOut
+            default: self = .network(code: urlError.code.rawValue)
+            }
         } else {
             self = .unexpectedResponse
         }
     }
 
-    private static let offlineCodes: Set<URLError.Code> = [
-        .notConnectedToInternet, .networkConnectionLost, .timedOut,
-        .cannotFindHost, .cannotConnectToHost, .dnsLookupFailed, .dataNotAllowed,
-    ]
-
     var message: String {
+        #if DEBUG
+        if let debugCode { return "\(userMessage) [\(debugCode)]" }
+        #endif
+        return userMessage
+    }
+
+    private var userMessage: String {
         switch self {
         case .missingAPIKey:
             "AI answers need a Gemini API key. Add GEMINI_API_KEY to Config/Secrets.xcconfig, then clean and rebuild."
@@ -79,6 +92,12 @@ enum ChatError: Error, Equatable, Sendable {
             "The AI is getting too many questions right now (free-tier limit). Please wait a minute and try again."
         case .offline:
             "You're offline. Check your internet connection and try again."
+        case .timedOut:
+            "The AI took too long to answer. It may be busy right now; please try again."
+        case .serviceBusy:
+            "The AI is overloaded right now. Please try again in a minute."
+        case .network:
+            "Couldn't reach the AI service. Please try again."
         case .blocked:
             "The AI couldn't answer that question. Try rephrasing it."
         case .emptyAnswer:
@@ -87,6 +106,22 @@ enum ChatError: Error, Equatable, Sendable {
             "The AI service had a problem (HTTP \(statusCode)). Please try again in a moment."
         case .unexpectedResponse:
             "Something went wrong. Please try again."
+        }
+    }
+
+    /// Shown after the message in DEBUG builds only. Never contains the API key.
+    private var debugCode: String? {
+        switch self {
+        case .timedOut: "URLError \(URLError.Code.timedOut.rawValue)"
+        case .offline: "offline"
+        case .serviceBusy: "HTTP 503"
+        case .network(let code): "URLError \(code)"
+        case .quotaExceeded: "HTTP 429"
+        case .invalidAPIKey: "invalid key"
+        case .blocked: "blocked"
+        case .emptyAnswer: "empty answer"
+        case .unexpectedResponse: "unexpected response"
+        case .missingAPIKey, .server: nil
         }
     }
 }

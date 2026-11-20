@@ -210,8 +210,15 @@ final class GeminiChatServiceTests: XCTestCase {
     }
 
     func testServerErrorMapsToServer() async {
-        MockURLProtocol.handler = MockURLProtocol.respond(status: 503, data: json("Service Unavailable"))
-        await assertError(.server(statusCode: 503))
+        MockURLProtocol.handler = MockURLProtocol.respond(status: 500, data: json("Internal Server Error"))
+        await assertError(.server(statusCode: 500))
+    }
+
+    func testHighDemand503MapsToServiceBusy() async {
+        // Body copied from a live 503 response (2026-11-20).
+        MockURLProtocol.handler = MockURLProtocol.respond(status: 503, data: json(
+            #"{"error":{"code":503,"message":"This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.","status":"UNAVAILABLE"}}"#))
+        await assertError(.serviceBusy)
     }
 
     func testOfflineMapsToOffline() async {
@@ -219,9 +226,37 @@ final class GeminiChatServiceTests: XCTestCase {
         await assertError(.offline)
     }
 
+    func testConnectionLostMapsToOffline() async {
+        MockURLProtocol.handler = MockURLProtocol.fail(with: .networkConnectionLost)
+        await assertError(.offline)
+    }
+
+    /// Regression: a stalled Gemini request (high demand) timed out and was shown as "You're offline".
+    func testTimeoutIsNotOffline() async {
+        MockURLProtocol.handler = MockURLProtocol.fail(with: .timedOut)
+        await assertError(.timedOut)
+        XCTAssertFalse(ChatError.timedOut.message.contains("offline"))
+    }
+
+    func testOtherURLErrorsAreNotOfflineAndKeepTheirCode() async {
+        for code: URLError.Code in [.cannotFindHost, .cannotConnectToHost, .dnsLookupFailed, .secureConnectionFailed] {
+            MockURLProtocol.handler = MockURLProtocol.fail(with: code)
+            await assertError(.network(code: code.rawValue))
+        }
+    }
+
+    func testDebugBuildsShowTheErrorCode() {
+        #if DEBUG
+        XCTAssertTrue(ChatError.timedOut.message.hasSuffix("[URLError -1001]"))
+        XCTAssertTrue(ChatError.network(code: -1003).message.hasSuffix("[URLError -1003]"))
+        XCTAssertTrue(ChatError.serviceBusy.message.hasSuffix("[HTTP 503]"))
+        #endif
+    }
+
     func testErrorMessagesNeverContainTheKey() {
-        let errors: [ChatError] = [.missingAPIKey, .invalidAPIKey, .quotaExceeded, .offline, .blocked,
-                                   .emptyAnswer, .server(statusCode: 500), .unexpectedResponse]
+        let errors: [ChatError] = [.missingAPIKey, .invalidAPIKey, .quotaExceeded, .offline, .timedOut, .serviceBusy,
+                                   .network(code: -1004), .blocked, .emptyAnswer, .server(statusCode: 500),
+                                   .unexpectedResponse]
         for error in errors {
             XCTAssertFalse(error.message.contains(apiKey))
             XCTAssertFalse(error.message.isEmpty)

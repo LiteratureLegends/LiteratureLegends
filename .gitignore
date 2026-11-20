@@ -1,0 +1,11 @@
+# macOS
+.DS_Store
+
+# Xcode per-user state and build output
+xcuserdata/
+DerivedData/
+build/
+*.xcuserstate
+
+# Local secrets: never commit. Copy Config/Secrets.example.xcconfig to Config/Secrets.xcconfig.
+Secrets.xcconfig

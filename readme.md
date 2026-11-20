@@ -125,6 +125,26 @@ In this section, we document all granular level user stories based on the screen
   * Leads to [**Discover Screen**]
   * Leads to [**Library**]
   * Leads to [**Login Screen**]
+## Developer Setup
+
+### API keys (never commit them)
+
+Each teammate keeps their own keys in `Config/Secrets.xcconfig`. That file is gitignored, so it is never committed. Non-secret settings (the Back4App server URL, the Gemini model name) are in the committed `Config/App.xcconfig`.
+
+1. Copy the template: `cp Config/Secrets.example.xcconfig Config/Secrets.xcconfig`
+2. Open `Config/Secrets.xcconfig` and replace each `YOUR_…` placeholder with your key:
+
+   | Setting | Used for | Where to get it |
+   |---|---|---|
+   | `OPENALEX_API_KEY` | Paper search | Free key at <https://openalex.org/settings/api>. Click the activation link OpenAlex emails you. |
+   | `GEMINI_API_KEY` | "Ask about this paper" | <https://aistudio.google.com/apikey> |
+   | `PARSE_APPLICATION_ID` | Login, projects (Back4App) | Back4App dashboard › App Settings › Security & Keys |
+   | `PARSE_REST_API_KEY` | Login, projects (Back4App) | Back4App dashboard › App Settings › Security & Keys |
+
+3. In Xcode, clean the build folder (Product › Clean Build Folder, ⇧⌘K) and run.
+
+**Never use the Parse Master Key** (or the JavaScript Key) anywhere in the app or in this repo. Run `git status` before committing to make sure `Secrets.xcconfig` never shows up. Without keys, the app shows setup messages instead of crashing. See `LiteratureLegends/PaperSearch/PORTING.md` for how the configuration is wired into the project.
+
 ## Wireframes
 ![Handwritten](images/Wireframe1.jpeg)
 ![Handwritten](images/Wireframe2.jpeg)

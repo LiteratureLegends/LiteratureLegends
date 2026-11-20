@@ -41,9 +41,6 @@ struct DiscoverView<Home: View>: View {
         .onSubmit(of: .search) { viewModel.submit() }
         .onChange(of: viewModel.query) { viewModel.queryDidChange() }
         .onChange(of: viewModel.mode) { viewModel.modeDidChange() }
-        .navigationDestination(for: Paper.self) { paper in
-            PaperDetailView(paper: paper, service: viewModel.service)
-        }
     }
 
     private var modePicker: some View {
@@ -104,7 +101,13 @@ struct DiscoverView<Home: View>: View {
         List {
             Section {
                 ForEach(viewModel.papers) { paper in
-                    NavigationLink(value: paper) {
+                    // View-based link on purpose: this screen is pushed by a view-based
+                    // NavigationLink("Discover") in AuthenticatedHomeView. Mixing that with
+                    // NavigationLink(value:) + .navigationDestination in one stack made SwiftUI put
+                    // the value-pushed detail *under* Discover (detail flashed, then Discover again).
+                    NavigationLink {
+                        PaperDetailView(paper: paper, service: viewModel.service)
+                    } label: {
                         PaperRowView(paper: paper)
                     }
                     .onAppear { viewModel.loadNextPageIfNeeded(currentPaper: paper) }

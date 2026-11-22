@@ -1,0 +1,46 @@
+{
+  "meta": { "count": 60, "db_response_time_ms": 42, "page": 1, "per_page": 25, "groups_count": null },
+  "results": [
+    {
+      "id": "https://openalex.org/W2741809807",
+      "doi": "https://doi.org/10.7717/peerj.4375",
+      "title": "The state of OA: a large-scale analysis of the prevalence and impact of Open Access articles",
+      "display_name": "The state of OA: a large-scale analysis of the prevalence and impact of Open Access articles",
+      "publication_date": "2018-02-13",
+      "publication_year": 2018,
+      "authorships": [
+        { "author_position": "first", "author": { "id": "https://openalex.org/A5048491430", "display_name": "Heather Piwowar" }, "raw_author_name": "Heather Piwowar" },
+        { "author_position": "middle", "author": { "id": "https://openalex.org/A5023888391", "display_name": "Jason Priem" }, "raw_author_name": "Jason Priem" },
+        { "author_position": "middle", "author": { "id": "https://openalex.org/A5000000003", "display_name": "Vincent Larivière" }, "raw_author_name": "Vincent Larivière" },
+        { "author_position": "last", "author": { "id": "https://openalex.org/A5000000004", "display_name": "Stefanie Haustein" }, "raw_author_name": "Stefanie Haustein" }
+      ],
+      "primary_location": {
+        "id": "doi:10.7717/peerj.4375",
+        "landing_page_url": "https://doi.org/10.7717/peerj.4375",
+        "source": { "id": "https://openalex.org/S1983995261", "display_name": "PeerJ", "type": "journal" }
+      },
+      "cited_by_count": 1487
+    },
+    {
+      "id": "https://openalex.org/W2000000002",
+      "doi": null,
+      "title": "Deep learning for literature triage",
+      "display_name": "Deep learning for literature triage",
+      "publication_date": null,
+      "publication_year": 2021,
+      "authorships": [
+        { "author": { "display_name": "Ada Lovelace" } },
+        { "author": null, "raw_author_name": "A. Turing" }
+      ],
+      "primary_location": { "landing_page_url": null, "source": null },
+      "cited_by_count": 12
+    },
+    {
+      "id": "https://openalex.org/W2000000003",
+      "title": null,
+      "display_name": null,
+      "authorships": [],
+      "primary_location": null
+    }
+  ]
+}

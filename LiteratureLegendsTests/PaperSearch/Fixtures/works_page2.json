@@ -1,0 +1,20 @@
+{
+  "meta": { "count": 30, "page": 2, "per_page": 25 },
+  "results": [
+    {
+      "id": "https://openalex.org/W2741809807",
+      "title": "Duplicate of a page-1 result (relevance ranking shifted)",
+      "authorships": [],
+      "cited_by_count": 1487
+    },
+    {
+      "id": "https://openalex.org/W3000000001",
+      "doi": "https://doi.org/10.5555/page.two",
+      "title": "A paper that only appears on page two",
+      "publication_year": 2024,
+      "authorships": [ { "author": { "display_name": "Grace Hopper" } } ],
+      "primary_location": { "source": { "display_name": "Journal of Paging" } },
+      "cited_by_count": 3
+    }
+  ]
+}

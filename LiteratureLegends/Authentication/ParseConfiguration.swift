@@ -1,16 +1,16 @@
 import Foundation
 
 /// Only public Parse client configuration goes here, NEVER a Parse master key.
-/// Ask the team's backend owner for the actual server URL and application ID.
-/// Example server URL: https://your-server.example/parse
-/// The placeholder configuration intentionally prevents live authentication.
+/// Values come from Info.plist, injected by Config/App.xcconfig (server URL) and the
+/// gitignored Config/Secrets.xcconfig (application ID, REST API key). See readme.md › Developer Setup.
+/// Missing or placeholder values intentionally prevent live authentication.
 enum ParseConfiguration {
-    static let serverURLString = "https://YOUR_PARSE_SERVER.example/parse"
-    static let applicationID = "YOUR_PARSE_APPLICATION_ID"
+    static let serverURLString = AppConfig.parseServerURL ?? ""
+    static let applicationID = AppConfig.parseApplicationID ?? ""
 
-    // Only use a REST API key if your server specifically requires one.
+    // Back4App requires the REST API key on every REST request.
     // Never add a master key to the iOS application.
-    static let restAPIKey: String? = nil
+    static let restAPIKey: String? = AppConfig.parseRESTAPIKey
 
     static var isConfigured: Bool {
         guard let url = URL(string: serverURLString),
@@ -18,7 +18,9 @@ enum ParseConfiguration {
               url.host != nil,
               !serverURLString.contains("YOUR_PARSE_SERVER"),
               !applicationID.isEmpty,
-              !applicationID.contains("YOUR_PARSE_APPLICATION_ID") else {
+              !applicationID.contains("YOUR_PARSE_APPLICATION_ID"),
+              // Back4App rejects REST calls without X-Parse-REST-API-Key, so treat it as required.
+              let restAPIKey, !restAPIKey.isEmpty else {
             return false
         }
         return true

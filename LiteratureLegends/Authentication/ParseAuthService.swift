@@ -50,6 +50,12 @@ final class ParseAuthService: AuthServicing {
         }
     }
 
+    func updateName(_ name: String, userID: String) async throws {
+        guard let token = keychain.read(), !token.isEmpty else { throw AuthFailure.missingSession }
+        let _: EmptyParseResponse = try await request(
+            "users/\(userID)", method: "PUT", body: ["name": name], sessionToken: token)
+    }
+
     func logout() async throws {
         guard let token = keychain.read(), !token.isEmpty else { return }
         // Keep the local token if remote revocation fails, so we can retry.
@@ -112,17 +118,26 @@ final class ParseAuthService: AuthServicing {
     }
 }
 
-private struct ParseUserResponse: Decodable {
+struct ParseUserResponse: Decodable {
     let objectId: String
     let username: String?
     let email: String?
     let name: String?
+    let createdAt: String?
     let sessionToken: String?
 
     func asUser(fallbackEmail: String = "", fallbackName: String = "") -> AuthUser {
-        AuthUser(id: objectId,
-                 email: email ?? username ?? fallbackEmail,
-                 name: name ?? (fallbackName.isEmpty ? "Student" : fallbackName))
+        let date = createdAt.flatMap {
+            (try? Date.ISO8601FormatStyle(includingFractionalSeconds: true).parse($0))
+                ?? (try? Date.ISO8601FormatStyle().parse($0))
+        }
+        let login = username ?? (fallbackEmail.isEmpty ? nil : fallbackEmail)
+        let emailFromLogin = login.flatMap { $0.contains("@") ? $0 : nil }
+        return AuthUser(id: objectId,
+                        email: email ?? emailFromLogin ?? fallbackEmail,
+                        name: name ?? fallbackName,
+                        username: login,
+                        createdAt: date)
     }
 }
 

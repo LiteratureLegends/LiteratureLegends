@@ -1,8 +1,20 @@
-
 import SwiftUI
 
 struct AuthRootView: View {
-    @StateObject private var auth = AuthManager()
+    @AppStorage(AppAppearance.storageKey) private var appearance = AppAppearance.system
+    @StateObject private var auth: AuthManager
+    private let searchService: (any PaperSearchService)?
+    private let projectService: any ProjectService
+
+    init(
+        authService: any AuthServicing = ParseAuthService(),
+        searchService: (any PaperSearchService)? = AppConfig.openAlexAPIKey.map { OpenAlexService(apiKey: $0) },
+        projectService: any ProjectService = ParseProjectService()
+    ) {
+        _auth = StateObject(wrappedValue: AuthManager(service: authService))
+        self.searchService = searchService
+        self.projectService = projectService
+    }
 
     var body: some View {
         Group {
@@ -13,11 +25,15 @@ struct AuthRootView: View {
                         .foregroundStyle(.secondary)
                 }
             } else if let user = auth.currentUser {
-                AuthenticatedHomeView(auth: auth, user: user)
+                NavigationStack {
+                    DiscoverPageView(user: user, searchService: searchService, projectService: projectService)
+                }
+                .environmentObject(auth)
             } else {
                 AuthEntryView(auth: auth)
             }
         }
+        .preferredColorScheme(appearance.colorScheme)
         .tint(ProfileTheme.accent)
         .task {
             await auth.restoreSession()
@@ -48,91 +64,6 @@ private struct AuthEntryView: View {
             .navigationTitle(
                 showingRegistration ? "Create account" : "Log in"
             )
-        }
-    }
-}
-
-// Screen displayed after successful login
-private struct AuthenticatedHomeView: View {
-    @ObservedObject var auth: AuthManager
-    let user: AuthUser
-
-    var body: some View {
-        NavigationStack {
-            List {
-                Section {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label(
-                            "Signed in",
-                            systemImage: "checkmark.shield.fill"
-                        )
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(ProfileTheme.accent)
-
-                        Text("Welcome, \(user.name)!")
-                            .font(.title2.weight(.bold))
-
-                        Text(user.email)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 8)
-                }
-
-                Section("Current development build") {
-                    NavigationLink("Discover") { DiscoverPageView(user: user) }
-
-                    NavigationLink(
-                        "Open Luis's profile preview"
-                    ) {
-                        ProfileView(
-                            store: ProfileSampleData.makeStore()
-                        )
-                    }
-
-                    Text(
-                        "The profile currently uses sample data. " +
-                        "Account integration will be added later."
-                    )
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                }
-
-                Section {
-                    Button(role: .destructive) {
-                        Task {
-                            await auth.logout()
-                        }
-                    } label: {
-                        HStack {
-                            Label(
-                                "Log out",
-                                systemImage:
-                                    "rectangle.portrait.and.arrow.right"
-                            )
-
-                            Spacer()
-
-                            if auth.isWorking {
-                                ProgressView()
-                            }
-                        }
-                    }
-                    .disabled(auth.isWorking)
-                }
-
-                if let error = auth.errorMessage {
-                    Section {
-                        Label(
-                            error,
-                            systemImage: "exclamationmark.triangle"
-                        )
-                        .foregroundStyle(.red)
-                        .font(.footnote)
-                    }
-                }
-            }
-            .navigationTitle("Researcher")
         }
     }
 }

@@ -2,9 +2,7 @@
 //  DiscoverUITestHarness.swift
 //  LiteratureLegends · Discover
 //
-//  DEBUG only. Launched with `-UITestDiscover` by LiteratureLegendsUITests: skips login and uses
-//  mock services, but keeps the real navigation shape of AuthenticatedHomeView (AuthRootView.swift):
-//  a NavigationStack with a List and a view-based NavigationLink("Discover").
+//  Restores a fixture session and exercises the production navigation without network access.
 //
 
 #if DEBUG
@@ -16,23 +14,22 @@ enum UITestLaunch {
 }
 
 struct DiscoverUITestHarness: View {
-    private let user = AuthUser(id: "ui-test-user", email: "test@example.com", name: "Test User")
-
     var body: some View {
-        NavigationStack {
-            List {
-                Section("Current development build") {
-                    NavigationLink("Discover") {
-                        DiscoverPageView(
-                            user: user,
-                            searchService: MockPaperSearchService(delay: .milliseconds(200)),
-                            projectService: MockProjectService(delay: .zero)
-                        )
-                    }
-                }
-            }
-            .navigationTitle("Home")
-        }
+        AuthRootView(
+            authService: DiscoverTestAuthService(),
+            searchService: MockPaperSearchService(delay: .milliseconds(200)),
+            projectService: MockProjectService(delay: .zero)
+        )
     }
+}
+
+private final class DiscoverTestAuthService: AuthServicing {
+    private var user = AuthUser(id: "ui-test-user", email: "test@example.com", name: "Test User")
+
+    func restoreSession() async throws -> AuthUser? { user }
+    func login(email: String, password: String) async throws -> AuthUser { user }
+    func register(name: String, email: String, password: String) async throws -> AuthUser { user }
+    func updateName(_ name: String, userID: String) async throws { user.name = name }
+    func logout() async throws {}
 }
 #endif

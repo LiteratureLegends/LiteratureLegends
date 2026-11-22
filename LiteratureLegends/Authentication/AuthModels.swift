@@ -4,7 +4,16 @@ import Foundation
 struct AuthUser: Equatable {
     let id: String
     let email: String
-    let name: String
+    var name: String
+    var username: String? = nil
+    var createdAt: Date? = nil
+
+    var displayName: String {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty { return trimmed }
+        if !email.isEmpty { return email }
+        return username ?? "Your account"
+    }
 }
 
 enum AuthFailure: LocalizedError {
@@ -67,5 +76,6 @@ protocol AuthServicing {
     func register(name: String, email: String, password: String) async throws -> AuthUser
     func login(email: String, password: String) async throws -> AuthUser
     func restoreSession() async throws -> AuthUser?
+    func updateName(_ name: String, userID: String) async throws
     func logout() async throws
 }

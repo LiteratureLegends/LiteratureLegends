@@ -3,8 +3,7 @@
 //  LiteratureLegends · Discover
 //
 //  Discover screen from images/Wireframe2.jpeg: "Find your next idea", search, the scan
-//  banner, and Continue Researching. Pushed from AuthenticatedHomeView until a tab bar exists,
-//  so it has no NavigationStack of its own.
+//  banner, and recent projects. AuthRootView supplies the navigation stack.
 //
 
 import SwiftUI
@@ -12,14 +11,13 @@ import SwiftUI
 struct DiscoverPageView: View {
     let user: AuthUser
     private let searchService: (any PaperSearchService)?
-    @StateObject private var profileStore = ProfileSampleData.makeStore()
     @State private var projects: ContinueResearchingViewModel
 
     /// - Parameter searchService: nil when no OpenAlex key is configured (shows setup steps instead of search).
     init(
         user: AuthUser,
-        searchService: (any PaperSearchService)? = AppConfig.openAlexAPIKey.map { OpenAlexService(apiKey: $0) },
-        projectService: any ProjectService = ParseProjectService()
+        searchService: (any PaperSearchService)?,
+        projectService: any ProjectService
     ) {
         self.user = user
         self.searchService = searchService
@@ -36,12 +34,18 @@ struct DiscoverPageView: View {
                     .navigationTitle("Find your next idea")
             }
         }
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text("Find your next idea")
+                    .font(.system(.title2, design: .serif, weight: .semibold))
+                    .accessibilityAddTraits(.isHeader)
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink {
-                    ProfileView(store: profileStore)
+                    ProfileView(user: user)
                 } label: {
-                    InitialsBadge(name: user.name)
+                    InitialsBadge(name: user.displayName)
                 }
                 .accessibilityLabel("Open profile")
             }
@@ -61,6 +65,7 @@ struct DiscoverPageView: View {
             }
             .padding()
         }
+        .background(Color(uiColor: .systemGroupedBackground))
         .scrollDismissesKeyboard(.immediately)
     }
 }
@@ -90,6 +95,7 @@ private let previewUser = AuthUser(id: "preview-user", email: "ada@example.edu",
                          searchService: MockPaperSearchService(),
                          projectService: MockProjectService())
     }
+    .environmentObject(AuthManager())
 }
 
 #Preview("No projects") {
@@ -98,6 +104,7 @@ private let previewUser = AuthUser(id: "preview-user", email: "ada@example.edu",
                          searchService: MockPaperSearchService(),
                          projectService: MockProjectService(behavior: .projects([])))
     }
+    .environmentObject(AuthManager())
 }
 
 #Preview("Projects error") {
@@ -106,10 +113,12 @@ private let previewUser = AuthUser(id: "preview-user", email: "ada@example.edu",
                          searchService: MockPaperSearchService(),
                          projectService: MockProjectService(behavior: .failure(.server(statusCode: 500))))
     }
+    .environmentObject(AuthManager())
 }
 
 #Preview("No OpenAlex key") {
     NavigationStack {
         DiscoverPageView(user: previewUser, searchService: nil, projectService: MockProjectService())
     }
+    .environmentObject(AuthManager())
 }

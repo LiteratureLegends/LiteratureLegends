@@ -12,8 +12,9 @@ struct ContinueResearchingView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Continue Researching")
+            Text("Recent Projects")
                 .font(.title3.bold())
+                .accessibilityAddTraits(.isHeader)
 
             switch viewModel.state {
             case .idle, .loading:
@@ -66,14 +67,19 @@ struct ProjectRowView: View {
     let project: ResearchProject
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(project.name)
-                .font(.headline)
-                .lineLimit(2)
-            if let updatedAt = project.updatedAt {
-                Text("Updated \(updatedAt, format: .relative(presentation: .named))")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+        HStack(spacing: 12) {
+            Image(systemName: "folder")
+                .foregroundStyle(.tint)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(project.name)
+                    .font(.headline)
+                    .lineLimit(2)
+                if let updatedAt = project.updatedAt {
+                    Text("Updated \(updatedAt, format: .relative(presentation: .named))")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .padding()

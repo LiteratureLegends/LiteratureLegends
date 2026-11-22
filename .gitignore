@@ -9,7 +9,3 @@ build/
 
 # Local secrets: never commit. Copy Config/Secrets.example.xcconfig to Config/Secrets.xcconfig.
 Secrets.xcconfig
-
-.env
-.env.*
-!.env.example

@@ -1,13 +1,10 @@
 import SwiftUI
 
+/// Authentication is the entry point; Luis's profile preview is still reachable
+/// after login and has not been modified by this feature.
 struct ContentView: View {
-    @StateObject private var store = ProfileSampleData.makeStore()
-
     var body: some View {
-        NavigationStack {
-            ProfileView(store: store)
-        }
-        .tint(ProfileTheme.accent)
+        AuthRootView()
     }
 }
 

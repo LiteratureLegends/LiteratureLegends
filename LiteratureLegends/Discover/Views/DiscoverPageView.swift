@@ -12,6 +12,7 @@ import SwiftUI
 struct DiscoverPageView: View {
     let user: AuthUser
     private let searchService: (any PaperSearchService)?
+    @StateObject private var profileStore = ProfileSampleData.makeStore()
     @State private var projects: ContinueResearchingViewModel
 
     /// - Parameter searchService: nil when no OpenAlex key is configured (shows setup steps instead of search).
@@ -37,8 +38,12 @@ struct DiscoverPageView: View {
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                // TODO: Open Profile from here once the tab bar exists (wireframe "Profile" badge).
-                InitialsBadge(name: user.name)
+                NavigationLink {
+                    ProfileView(store: profileStore)
+                } label: {
+                    InitialsBadge(name: user.name)
+                }
+                .accessibilityLabel("Open profile")
             }
         }
         .task { await projects.loadIfNeeded() }
@@ -74,7 +79,6 @@ struct InitialsBadge: View {
             .font(.caption.weight(.semibold))
             .frame(width: 32, height: 32)
             .background(Circle().strokeBorder(.tint, lineWidth: 1.5))
-            .accessibilityLabel("Signed in as \(name)")
     }
 }
 

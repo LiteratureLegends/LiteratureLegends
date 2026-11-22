@@ -11,6 +11,10 @@ import SwiftUI
 struct PaperChatView: View {
     @State private var viewModel: PaperChatViewModel
     @FocusState private var isInputFocused: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var typingMessageID: UUID?
+    @State private var revealedText = AttributedString()
+    @State private var followReply = true
 
     init(paper: Paper, service: any ChatService = GeminiChatService()) {
         _viewModel = State(initialValue: PaperChatViewModel(paper: paper, service: service))
@@ -27,16 +31,34 @@ struct PaperChatView: View {
                     LazyVStack(alignment: .leading, spacing: 12) {
                         introCard
                         ForEach(viewModel.messages) { message in
-                            MessageBubble(message: message).id(message.id)
+                            MessageBubble(message: message,
+                                          revealedText: message.id == typingMessageID ? revealedText : nil)
+                                .id(message.id)
                         }
                         if viewModel.isSending {
                             ThinkingBubble().id("thinking")
                         }
                     }
                     .padding()
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { _ in
+                        if followReply, let typingMessageID {
+                            proxy.scrollTo(typingMessageID, anchor: .bottom)
+                        }
+                    }
                 }
+                .simultaneousGesture(DragGesture().onChanged { _ in followReply = false })
                 .scrollDismissesKeyboard(.interactively)
-                .onChange(of: viewModel.messages.count) { scrollToBottom(proxy) }
+                .onChange(of: viewModel.messages.count) { previous, current in
+                    typingMessageID = nil
+                    if current > previous {
+                        followReply = true
+                        if !reduceMotion, let reply = viewModel.messages.last, reply.role == .assistant {
+                            revealedText = AttributedString()
+                            typingMessageID = reply.id
+                        }
+                    }
+                    scrollToBottom(proxy)
+                }
                 .onChange(of: viewModel.isSending) { scrollToBottom(proxy) }
             }
 
@@ -44,12 +66,36 @@ struct PaperChatView: View {
             sourceFooter
             inputBar
         }
+        .task(id: typingMessageID) {
+            guard let typingMessageID, let reply = viewModel.messages.last, reply.id == typingMessageID else { return }
+            await reveal(reply)
+        }
+        .onChange(of: reduceMotion) { if reduceMotion { typingMessageID = nil } }
+        .onDisappear { typingMessageID = nil }
         .navigationTitle("Research Analysis")
         .navigationBarTitleDisplayMode(.inline)
     }
 
+    @MainActor
+    private func reveal(_ reply: ChatMessage) async {
+        // Parse once so emphasis and citations stay intact as the text appears.
+        let formatted = MessageBubble.render(reply.text)
+        let characters = formatted.characters
+        let step = max(2, (characters.count + 119) / 120)
+        var end = characters.startIndex
+        while end < characters.endIndex {
+            guard !Task.isCancelled, typingMessageID == reply.id else { return }
+            end = characters.index(end, offsetBy: step, limitedBy: characters.endIndex) ?? characters.endIndex
+            revealedText = AttributedString(formatted[..<end])
+            if end < characters.endIndex {
+                do { try await Task.sleep(for: .milliseconds(32)) } catch { return }
+            }
+        }
+        typingMessageID = nil
+    }
+
     private func scrollToBottom(_ proxy: ScrollViewProxy) {
-        withAnimation {
+        withAnimation(reduceMotion ? nil : .default) {
             if viewModel.isSending {
                 proxy.scrollTo("thinking", anchor: .bottom)
             } else if let last = viewModel.messages.last {
@@ -146,13 +192,14 @@ struct PaperChatView: View {
 
 private struct MessageBubble: View {
     let message: ChatMessage
+    let revealedText: AttributedString?
 
     private var isUser: Bool { message.role == .user }
 
     var body: some View {
         HStack {
             if isUser { Spacer(minLength: 40) }
-            Text(Self.render(message.text))
+            Text(revealedText ?? Self.render(message.text))
                 .textSelection(.enabled)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)

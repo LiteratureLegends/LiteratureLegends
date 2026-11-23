@@ -43,9 +43,12 @@ In this section, we document high-level user stories that are required and optio
 
 ## Build Progress
 
-Video
+Videos
+
 [Build Progress](https://www.loom.com/share/11b503695bc846bc837afc6eb960d0c5)
-[Demo Day Prep](#)
+
+[Demo Day Prep](https://youtu.be/z4cujnLcu68)
+
 Login Screen
 
 ![Login](https://i.imgur.com/GVxxVwV.png)
@@ -64,22 +67,22 @@ Signup Screen
 ### 2. Screen Archetypes
 In this section, we document all granular level user stories based on the screen archetype.
 
-- [ ] **Login Screen**
+- [x] **Login Screen**
 * Required User Feature: User can log in.
 * Required User Feature: User can create new account.
-- [ ] **Register User**
+- [x] **Register User**
 * Required User Feature: User provides basic details for sign up: name, unique email, and password.
 * Optional User Feature: User can sign up via Single Sign-On options like Google or Apple (iCloud).
-- [ ] **Discover**
+- [x] **Discover**
 * Required User Feature: At a glance, user can continue working on their existing research.
 * Required User Feature: User can search across existing papers, topics, authors, and DOI.
 * Optional User Feature: User can filter content on screen
-- [ ] **Library**
+- [x] **Library**
 * Required User Feature: User can continue conversations about existing projects and documentation the application has already found.
 * Required User Feature: User can save their conversation to an existing project.
 * Required User Feature: User can continue the conversation to drilldown the topic.
 * Required User Feature: User has a link available to reach the source directly.
-- [ ] **Profile**
+- [x] **Profile**
 * Required User Feature: User has a single score of saved papers, scans, and projects. 
 * Optional User Feature: Tapping on a single score report allows you to drilldown to the specific listings.
 * Required User Feature: User has a list of projects they have created, or that have been shared with them.
@@ -95,15 +98,15 @@ In this section, we document all granular level user stories based on the screen
 
 **Tab Navigation** (Tab to Screen)
 
-- [ ] Discover, e.g., Search bar, scan action banner, recent projects, recommended papers.
+- [x] Discover, e.g., Search bar, scan action banner, recent projects, recommended papers.
 - [ ] Library, e.g., Saved paper repository, collections, and recent scans filter.
-- [ ] Profile, e.g., User metrics, project folders list, and account settings
+- [x] Profile, e.g., User metrics, project folders list, and account settings
 ...
 ...
 
 **Flow Navigation** (Screen to Screen)
 
-- [ ] [**Login Screen**]
+- [x] [**Login Screen**]
   * Leads to [**Discover Screen**]
   * Leads to [**Register User**] 
 - [ ] [**Register User**]

@@ -3,6 +3,7 @@ import SwiftUI
 struct AuthRootView: View {
     @AppStorage(AppAppearance.storageKey) private var appearance = AppAppearance.system
     @StateObject private var auth: AuthManager
+    @State private var navigationPath = NavigationPath()
     private let searchService: (any PaperSearchService)?
     private let projectService: any ProjectService
     private let isRunningInPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
@@ -26,8 +27,23 @@ struct AuthRootView: View {
                         .foregroundStyle(.secondary)
                 }
             } else if let user = auth.currentUser {
-                NavigationStack {
+                NavigationStack(path: $navigationPath) {
                     DiscoverPageView(user: user, searchService: searchService, projectService: projectService)
+                }
+                .safeAreaInset(edge: .bottom) {
+                    if !navigationPath.isEmpty {
+                        Button {
+                            navigationPath.removeLast(navigationPath.count)
+                        } label: {
+                            Label("Home", systemImage: "house.fill")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        .padding(.horizontal)
+                        .padding(.vertical, 8)
+                        .background(.bar)
+                    }
                 }
                 .environmentObject(auth)
             } else {

@@ -12,7 +12,7 @@ struct ContinueResearchingView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Recent Projects")
+            Text("My Projects")
                 .font(.title3.bold())
                 .accessibilityAddTraits(.isHeader)
 
@@ -29,10 +29,14 @@ struct ContinueResearchingView: View {
                             message: "Projects you create will show up here.",
                             systemImage: "folder")
             case .loaded(let projects):
-                VStack(spacing: 10) {
+                LazyVStack(spacing: 10) {
                     ForEach(projects) { project in
-                        // TODO: Open the project once a Project detail screen exists (Library/Profile).
-                        ProjectRowView(project: project)
+                        NavigationLink {
+                            ProjectWorkspaceView(project: project)
+                        } label: {
+                            ProjectRowView(project: project)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             case .error(let error):

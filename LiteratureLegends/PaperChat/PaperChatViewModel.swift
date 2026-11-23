@@ -20,22 +20,42 @@ final class PaperChatViewModel {
     var draft = ""
     private(set) var messages: [ChatMessage] = []
     private(set) var isSending = false
-    /// The last problem to show above the input field, or nil.
-    private(set) var errorMessage: String?
+    /// The last problem encountered, retained for diagnostics and tests but not presented in the UI.
+    private(set) var errorMessage: String? {
+        didSet {
+            if let errorMessage {
+                Self.logError(errorMessage)
+            }
+        }
+    }
     /// Questions left today; copied from the limiter so the view observes changes.
     private(set) var remainingToday: Int
 
     private let service: any ChatService
     private let limiter: DailyQuestionLimiter
+    private let persistence: (any ChatPersisting)?
 
     /// `limiter` defaults to a UserDefaults-backed limit of 20 questions per day.
-    init(paper: Paper, service: any ChatService, limiter: DailyQuestionLimiter? = nil) {
+    init(
+        paper: Paper,
+        service: any ChatService,
+        limiter: DailyQuestionLimiter? = nil,
+        persistence: (any ChatPersisting)? = nil
+    ) {
         let limiter = limiter ?? DailyQuestionLimiter()
         self.paper = paper
         self.service = service
         self.limiter = limiter
+        self.persistence = persistence
         self.remainingToday = limiter.remainingToday
-        if !service.isConfigured { errorMessage = ChatError.missingAPIKey.message }
+        if !service.isConfigured {
+            errorMessage = ChatError.missingAPIKey.message
+            Self.logError(ChatError.missingAPIKey.message)
+        }
+    }
+
+    private static func logError(_ message: String) {
+        NSLog("[PaperChat] %@", message)
     }
 
     var isConfigured: Bool { service.isConfigured }
@@ -51,6 +71,16 @@ final class PaperChatViewModel {
     var sourceLabel: String {
         if let year = paper.displayYear { return "[1] \(paper.title) (\(year))" }
         return "[1] \(paper.title)"
+    }
+
+    func preparePersistence() async {
+        guard let persistence else { return }
+        do {
+            try await persistence.prepare(paperTitle: paper.title)
+        } catch {
+            let projectError = ProjectServiceError(error)
+            errorMessage = "The conversation couldn't be saved. \(projectError.message)"
+        }
     }
 
     func send() async {
@@ -75,12 +105,30 @@ final class PaperChatViewModel {
         isSending = true
         defer { isSending = false }
 
+        await preparePersistence()
+
         do {
             let reply = try await service.answer(question: question, about: paper, history: history)
-            messages.append(ChatMessage(role: .assistant,
-                                        text: reply.text + (reply.isTruncated ? Self.truncationNote : "")))
+            let assistantMessage = ChatMessage(
+                role: .assistant,
+                text: reply.text + (reply.isTruncated ? Self.truncationNote : "")
+            )
+            messages.append(assistantMessage)
             limiter.recordQuestion()
             remainingToday = limiter.remainingToday
+            if let persistence {
+                do {
+                    try await persistence.saveTurn(
+                        userMessage: userMessage,
+                        assistantMessage: assistantMessage,
+                        paperTitle: paper.title
+                    )
+                    errorMessage = nil
+                } catch {
+                    let projectError = ProjectServiceError(error)
+                    errorMessage = "The answer was received, but the conversation wasn't saved. \(projectError.message)"
+                }
+            }
         } catch {
             // Drop the unanswered question so history stays in user/model pairs; restore it for a retry.
             messages.removeAll { $0.id == userMessage.id }

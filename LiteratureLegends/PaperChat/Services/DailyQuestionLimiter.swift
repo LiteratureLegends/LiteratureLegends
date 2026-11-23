@@ -10,7 +10,7 @@ import Foundation
 
 @MainActor
 final class DailyQuestionLimiter {
-    nonisolated static let defaultLimit = 20
+    nonisolated static let defaultLimit = 1000
     private static let dayKey = "PaperChat.questionDay"
     private static let countKey = "PaperChat.questionCount"
 

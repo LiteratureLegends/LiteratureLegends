@@ -14,11 +14,21 @@ struct ResearchProject: Identifiable, Equatable, Sendable {
     let id: String
     let name: String
     let updatedAt: Date?
+    let ownerId: String
+
+    init(id: String, name: String, updatedAt: Date?, ownerId: String = "") {
+        self.id = id
+        self.name = name
+        self.updatedAt = updatedAt
+        self.ownerId = ownerId
+    }
 }
 
 protocol ProjectService: Sendable {
     /// The user's projects, most recently updated first.
     func recentProjects(ownerId: String, limit: Int) async throws -> [ResearchProject]
+    func createProject(name: String, ownerId: String, paper: Paper) async throws -> ResearchProject
+    func add(paper: Paper, to project: ResearchProject, ownerId: String) async throws
 }
 
 enum ProjectServiceError: Error, Equatable, Sendable {
@@ -34,6 +44,7 @@ enum ProjectServiceError: Error, Equatable, Sendable {
     /// Any other URLError (DNS, TLS, cannot connect, ...), with its code for debugging.
     case network(code: Int)
     case server(statusCode: Int)
+    case backend(code: Int, message: String)
     case unexpectedResponse
 
     init(_ error: Error) {
@@ -55,7 +66,7 @@ enum ProjectServiceError: Error, Equatable, Sendable {
         case .notConfigured: "Back4App not set up"
         case .notLoggedIn, .sessionExpired: "Please log in again"
         case .offline: "You're offline"
-        case .timedOut, .network, .server, .unexpectedResponse: "Couldn't load projects"
+        case .timedOut, .network, .server, .backend, .unexpectedResponse: "Couldn't load projects"
         }
     }
 
@@ -73,6 +84,8 @@ enum ProjectServiceError: Error, Equatable, Sendable {
             debugSuffixed("Couldn't reach the server. Please try again.", "URLError \(code)")
         case .server(let statusCode):
             "The server had a problem (HTTP \(statusCode)). Please try again."
+        case .backend(_, let message):
+            message
         case .unexpectedResponse:
             "Something went wrong. Please try again."
         }
@@ -88,5 +101,10 @@ enum ProjectServiceError: Error, Equatable, Sendable {
     }
 
     /// Retrying can't fix missing configuration.
-    var isRetryable: Bool { self != .notConfigured }
+    var isRetryable: Bool {
+        switch self {
+        case .notConfigured, .backend: false
+        default: true
+        }
+    }
 }

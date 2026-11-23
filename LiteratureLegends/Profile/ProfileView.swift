@@ -1,65 +1,103 @@
 import SwiftUI
 
 struct ProfileView: View {
-    @ObservedObject var store: ProfileStore
+    @EnvironmentObject private var auth: AuthManager
+    let user: AuthUser
 
     var body: some View {
         List {
             Section {
                 HStack(spacing: 16) {
-                    Text(store.profile.initials)
+                    Text(InitialsBadge(name: user.displayName).initials)
                         .font(.title2.weight(.semibold))
                         .foregroundStyle(.tint)
                         .frame(width: 64, height: 64)
                         .background(.tint.opacity(0.08), in: Circle())
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 5) {
-                        Text(store.profile.name).font(.title2.weight(.semibold))
-                        Text("@\(store.profile.userName)")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                        Text(user.displayName).font(.title2.weight(.semibold))
+                        if !user.email.isEmpty && user.email != user.displayName {
+                            Text(user.email)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
                 .padding(.vertical, 12)
             }
 
             Section("Account information") {
-                LabeledContent("Name", value: store.profile.name)
-                LabeledContent("Username", value: store.profile.userName)
-                LabeledContent("Email", value: store.profile.email)
-                    .textSelection(.enabled)
-                LabeledContent("Member since", value: store.profile.createdAt.formatted(.dateTime.month(.wide).year()))
+                if !user.name.isEmpty {
+                    LabeledContent("Name", value: user.name)
+                }
+                if !user.email.isEmpty {
+                    LabeledContent("Email", value: user.email)
+                        .textSelection(.enabled)
+                }
+                if let username = user.username, username != user.email {
+                    LabeledContent("Username", value: username)
+                }
+                if let createdAt = user.createdAt {
+                    LabeledContent("Member since", value: createdAt.formatted(.dateTime.month(.wide).year()))
+                }
             }
 
             Section {
                 NavigationLink {
-                    EditProfileView(store: store)
+                    EditProfileView(user: user)
                 } label: {
                     Label("Edit profile", systemImage: "square.and.pencil")
                         .foregroundStyle(.tint)
                 }
-            } footer: {
-                Text("Sample profile. Changes reset when the app closes.")
+            }
+            Section {
+                Button(role: .destructive) {
+                    Task { await auth.logout() }
+                } label: {
+                    HStack {
+                        Label("Log out", systemImage: "rectangle.portrait.and.arrow.right")
+                        if auth.isWorking { ProgressView() }
+                    }
+                }
+                .disabled(auth.isWorking)
+
+                if let error = auth.errorMessage {
+                    Label(error, systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(.red)
+                }
             }
         }
         .navigationTitle("Profile")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    AppearanceSettingsView()
+                } label: {
+                    Label("Settings", systemImage: "gearshape")
+                }
+            }
+        }
     }
 }
 
+#if DEBUG
 struct ProfileView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationStack {
-            ProfileView(store: ProfileSampleData.makeStore())
+            ProfileView(user: ProfileSampleData.user)
         }
+        .environmentObject(AuthManager())
         .tint(ProfileTheme.accent)
         .previewDisplayName("Profile")
 
         NavigationStack {
-            ProfileView(store: ProfileSampleData.makeStore())
+            ProfileView(user: ProfileSampleData.user)
         }
+        .environmentObject(AuthManager())
         .tint(ProfileTheme.accent)
         .environment(\.colorScheme, .dark)
         .environment(\.dynamicTypeSize, .accessibility3)
         .previewDisplayName("Dark, large text")
     }
 }
+#endif

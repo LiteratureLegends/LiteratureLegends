@@ -3,15 +3,14 @@
 //  LiteratureLegends · PaperSearch
 //
 //  Search part of the Discover screen (images/Wireframe2.jpeg): search bar, mode picker,
-//  results. It has no NavigationStack of its own, so it can be pushed onto the app's stack;
-//  `home` is shown while the search field is empty (DiscoverPageView passes the banner and
-//  Continue Researching there).
+//  results. The home content appears while the search field is empty.
 //
 
 import SwiftUI
 
 struct DiscoverView<Home: View>: View {
     @State private var viewModel: DiscoverViewModel
+    @State private var isSearchPresented = false
     private let home: Home
 
     init(service: any PaperSearchService, @ViewBuilder home: () -> Home) {
@@ -26,13 +25,16 @@ struct DiscoverView<Home: View>: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            modePicker
+            if isSearchPresented || !viewModel.trimmedQuery.isEmpty {
+                modePicker
+            }
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .navigationTitle("Find your next idea")
         .searchable(
             text: $viewModel.query,
+            isPresented: $isSearchPresented,
             placement: .navigationBarDrawer(displayMode: .always),
             prompt: "Papers, topics, authors, DOI…"
         )
@@ -101,10 +103,6 @@ struct DiscoverView<Home: View>: View {
         List {
             Section {
                 ForEach(viewModel.papers) { paper in
-                    // View-based link on purpose: this screen is pushed by a view-based
-                    // NavigationLink("Discover") in AuthenticatedHomeView. Mixing that with
-                    // NavigationLink(value:) + .navigationDestination in one stack made SwiftUI put
-                    // the value-pushed detail *under* Discover (detail flashed, then Discover again).
                     NavigationLink {
                         PaperDetailView(paper: paper, service: viewModel.service)
                     } label: {

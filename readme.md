@@ -37,15 +37,15 @@ In this section, we document high-level user stories that are required and optio
 - [X] User can query academic papers by keywords, topic, author name, or DOI cia external open API e.g., OpenAlex / Semantic Scholar).
 - [ ] User can point the camera at a physical printed paper or screen to scan text, extract titles/DOIs, or capture specific paragraphs using Apple VisionKit.
 - [X] User can inspect verified paper details, including title, authors, publication, venue, citation counts, and extracted raw text.
-- [ ] User can ask specific questions about the scanned/selected document and receive responses that cite traceable sources.
-- [ ] User can create named project folders and save papers or scans directly into them.
-- [ ] User saved papers, chat history, and project folders persist across sessions via a cloud backend.
+- [X] User can ask specific questions about the scanned/selected document and receive responses that cite traceable sources.
+- [X] User can create named project folders and save papers or scans directly into them.
+- [X] User saved papers, chat history, and project folders persist across sessions via a cloud backend.
 
 ## Build Progress
 
 Video
-[Video](https://www.loom.com/share/11b503695bc846bc837afc6eb960d0c5)
-
+[Build Progress](https://www.loom.com/share/11b503695bc846bc837afc6eb960d0c5)
+[Demo Day Prep](#)
 Login Screen
 
 ![Login](https://i.imgur.com/GVxxVwV.png)

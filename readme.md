@@ -43,7 +43,8 @@ In this section, we document high-level user stories that are required and optio
 
 ## Build Progress
 
-Video
+Videos
+
 [Build Progress](https://www.loom.com/share/11b503695bc846bc837afc6eb960d0c5)
 
 [Demo Day Prep](https://youtu.be/z4cujnLcu68)

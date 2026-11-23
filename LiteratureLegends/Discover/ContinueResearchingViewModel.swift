@@ -17,7 +17,7 @@ final class ContinueResearchingViewModel {
         case error(ProjectServiceError)
     }
 
-    static let projectLimit = 5
+    static let projectLimit = Int.max
 
     private(set) var state: State = .idle
 

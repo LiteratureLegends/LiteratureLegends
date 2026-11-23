@@ -11,6 +11,7 @@ import SwiftUI
 struct DiscoverPageView: View {
     let user: AuthUser
     private let searchService: (any PaperSearchService)?
+    private let projectService: any ProjectService
     @State private var projects: ContinueResearchingViewModel
 
     /// - Parameter searchService: nil when no OpenAlex key is configured (shows setup steps instead of search).
@@ -21,13 +22,14 @@ struct DiscoverPageView: View {
     ) {
         self.user = user
         self.searchService = searchService
+        self.projectService = projectService
         _projects = State(initialValue: ContinueResearchingViewModel(ownerId: user.id, service: projectService))
     }
 
     var body: some View {
         Group {
             if let searchService {
-                DiscoverView(service: searchService) { home }
+                DiscoverView(service: searchService, ownerId: user.id, projectService: projectService) { home }
             } else {
                 // No OpenAlex key: keep the rest of the page usable and explain how to enable search.
                 home
@@ -67,6 +69,9 @@ struct DiscoverPageView: View {
         }
         .background(Color(uiColor: .systemGroupedBackground))
         .scrollDismissesKeyboard(.immediately)
+        .refreshable {
+            await projects.retry()
+        }
     }
 }
 

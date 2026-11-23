@@ -12,14 +12,25 @@ struct DiscoverView<Home: View>: View {
     @State private var viewModel: DiscoverViewModel
     @State private var isSearchPresented = false
     private let home: Home
+    private let ownerId: String?
+    private let projectService: (any ProjectService)?
 
-    init(service: any PaperSearchService, @ViewBuilder home: () -> Home) {
+    init(
+        service: any PaperSearchService,
+        ownerId: String? = nil,
+        projectService: (any ProjectService)? = nil,
+        @ViewBuilder home: () -> Home
+    ) {
         _viewModel = State(initialValue: DiscoverViewModel(service: service))
+        self.ownerId = ownerId
+        self.projectService = projectService
         self.home = home()
     }
 
     init(viewModel: DiscoverViewModel, @ViewBuilder home: () -> Home) {
         _viewModel = State(initialValue: viewModel)
+        self.ownerId = nil
+        self.projectService = nil
         self.home = home()
     }
 
@@ -104,7 +115,12 @@ struct DiscoverView<Home: View>: View {
             Section {
                 ForEach(viewModel.papers) { paper in
                     NavigationLink {
-                        PaperDetailView(paper: paper, service: viewModel.service)
+                        PaperDetailView(
+                            paper: paper,
+                            service: viewModel.service,
+                            ownerId: ownerId,
+                            projectService: projectService
+                        )
                     } label: {
                         PaperRowView(paper: paper)
                     }

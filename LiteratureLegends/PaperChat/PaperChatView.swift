@@ -14,10 +14,19 @@ struct PaperChatView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var typingMessageID: UUID?
     @State private var revealedText = AttributedString()
-    @State private var followReply = true
 
-    init(paper: Paper, service: any ChatService = GeminiChatService()) {
-        _viewModel = State(initialValue: PaperChatViewModel(paper: paper, service: service))
+    init(
+        paper: Paper,
+        service: any ChatService = GeminiChatService(),
+        persistence: (any ChatPersisting)? = nil
+    ) {
+        _viewModel = State(
+            initialValue: PaperChatViewModel(
+                paper: paper,
+                service: service,
+                persistence: persistence
+            )
+        )
     }
 
     init(viewModel: PaperChatViewModel) {
@@ -40,18 +49,11 @@ struct PaperChatView: View {
                         }
                     }
                     .padding()
-                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { _ in
-                        if followReply, let typingMessageID {
-                            proxy.scrollTo(typingMessageID, anchor: .bottom)
-                        }
-                    }
                 }
-                .simultaneousGesture(DragGesture().onChanged { _ in followReply = false })
                 .scrollDismissesKeyboard(.interactively)
                 .onChange(of: viewModel.messages.count) { previous, current in
                     typingMessageID = nil
                     if current > previous {
-                        followReply = true
                         if !reduceMotion, let reply = viewModel.messages.last, reply.role == .assistant {
                             revealedText = AttributedString()
                             typingMessageID = reply.id
@@ -146,13 +148,6 @@ struct PaperChatView: View {
 
     private var inputBar: some View {
         VStack(alignment: .leading, spacing: 6) {
-            if let error = viewModel.errorMessage {
-                Label(error, systemImage: viewModel.isConfigured ? "exclamationmark.triangle" : "key.slash")
-                    .font(.footnote)
-                    .foregroundStyle(.red)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
             HStack(alignment: .bottom, spacing: 8) {
                 TextField("Ask about this…", text: $viewModel.draft, axis: .vertical)
                     .lineLimit(1...5)
@@ -199,13 +194,18 @@ private struct MessageBubble: View {
     var body: some View {
         HStack {
             if isUser { Spacer(minLength: 40) }
-            Text(revealedText ?? Self.render(message.text))
-                .textSelection(.enabled)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .foregroundStyle(isUser ? Color.white : Color.primary)
-                .background(isUser ? AnyShapeStyle(.tint) : AnyShapeStyle(.background.secondary),
-                            in: RoundedRectangle(cornerRadius: 18))
+            ZStack(alignment: .topLeading) {
+                // Reserve the completed reply's size so the bubble doesn't reflow while text is revealed.
+                Text(Self.render(message.text))
+                    .hidden()
+                Text(revealedText ?? Self.render(message.text))
+                    .textSelection(.enabled)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .foregroundStyle(isUser ? Color.white : Color.primary)
+            .background(isUser ? AnyShapeStyle(.tint) : AnyShapeStyle(.background.secondary),
+                        in: RoundedRectangle(cornerRadius: 18))
             if !isUser { Spacer(minLength: 40) }
         }
         .accessibilityElement(children: .combine)

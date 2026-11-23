@@ -45,7 +45,7 @@ In this section, we document high-level user stories that are required and optio
 
 Video
 [Build Progress](https://www.loom.com/share/11b503695bc846bc837afc6eb960d0c5)
-[Demo Day Prep](#)
+[Demo Day Prep](https://youtu.be/z4cujnLcu68)
 Login Screen
 
 ![Login](https://i.imgur.com/GVxxVwV.png)

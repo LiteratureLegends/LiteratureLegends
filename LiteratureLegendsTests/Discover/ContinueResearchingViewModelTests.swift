@@ -79,4 +79,10 @@ private actor FlakyProjectService: ProjectService {
         }
         return [ResearchProject(id: "p1", name: "Recovered", updatedAt: nil)]
     }
+
+    func createProject(name: String, ownerId: String, paper: Paper) async throws -> ResearchProject {
+        ResearchProject(id: "created", name: name, updatedAt: nil, ownerId: ownerId)
+    }
+
+    func add(paper: Paper, to project: ResearchProject, ownerId: String) async throws {}
 }

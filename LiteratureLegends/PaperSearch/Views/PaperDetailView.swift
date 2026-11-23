@@ -3,16 +3,29 @@
 //  LiteratureLegends · PaperSearch
 //
 //  Drill-down for one search result (#15), with "Ask about this paper" (AI chat).
-//  "Save to project" is intentionally not here yet.
+//  Supports creating a project from a paper or adding it to an existing project.
 //
 
 import SwiftUI
 
 struct PaperDetailView: View {
     @State private var viewModel: PaperDetailViewModel
+    @State private var isCreatingProject = false
+    @State private var isAddingToProject = false
+    @State private var createdProjectName: String?
+    @State private var addedProjectName: String?
+    private let ownerId: String?
+    private let projectService: (any ProjectService)?
 
-    init(paper: Paper, service: any PaperSearchService) {
+    init(
+        paper: Paper,
+        service: any PaperSearchService,
+        ownerId: String? = nil,
+        projectService: (any ProjectService)? = nil
+    ) {
         _viewModel = State(initialValue: PaperDetailViewModel(paper: paper, service: service))
+        self.ownerId = ownerId
+        self.projectService = projectService
     }
 
     private var paper: Paper { viewModel.paper }
@@ -27,6 +40,7 @@ struct PaperDetailView: View {
                 authorsSection
                 metadataSection
                 abstractSection
+                projectSection
                 askSection
 
                 if let url = paper.openURL {
@@ -44,6 +58,45 @@ struct PaperDetailView: View {
         .navigationTitle("Paper")
         .navigationBarTitleDisplayMode(.inline)
         .task { await viewModel.loadDetailsIfNeeded() }
+        .sheet(isPresented: $isAddingToProject) {
+            if let ownerId, let projectService {
+                AddToProjectView(
+                    paper: paper,
+                    ownerId: ownerId,
+                    service: projectService
+                ) { project in
+                    addedProjectName = project.name
+                }
+            }
+        }
+        .sheet(isPresented: $isCreatingProject) {
+            if let ownerId, let projectService {
+                CreateProjectView(
+                    suggestedName: paper.title,
+                    paper: paper,
+                    ownerId: ownerId,
+                    service: projectService
+                ) { project in
+                    createdProjectName = project.name
+                }
+            }
+        }
+        .alert("Added to project", isPresented: Binding(
+            get: { addedProjectName != nil },
+            set: { if !$0 { addedProjectName = nil } }
+        )) {
+            Button("OK", role: .cancel) { addedProjectName = nil }
+        } message: {
+            Text("This paper was added to “\(addedProjectName ?? "")”.")
+        }
+        .alert("Project created", isPresented: Binding(
+            get: { createdProjectName != nil },
+            set: { if !$0 { createdProjectName = nil } }
+        )) {
+            Button("OK", role: .cancel) { createdProjectName = nil }
+        } message: {
+            Text("“\(createdProjectName ?? "")” was saved to your projects.")
+        }
     }
 
     private var authorsSection: some View {
@@ -118,7 +171,14 @@ struct PaperDetailView: View {
     private var askSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             NavigationLink {
-                PaperChatView(paper: paper)
+                if let ownerId {
+                    PaperChatView(
+                        paper: paper,
+                        persistence: ParseChatPersistenceService(paper: paper, ownerId: ownerId)
+                    )
+                } else {
+                    PaperChatView(paper: paper)
+                }
             } label: {
                 Label("Ask about this paper", systemImage: "sparkles")
                     .frame(maxWidth: .infinity)
@@ -137,9 +197,206 @@ struct PaperDetailView: View {
         }
     }
 
+    @ViewBuilder
+    private var projectSection: some View {
+        if ownerId != nil, projectService != nil {
+            VStack(spacing: 12) {
+                Button {
+                    isAddingToProject = true
+                } label: {
+                    Label("Add to existing project", systemImage: "folder")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+
+                Button {
+                    isCreatingProject = true
+                } label: {
+                    Label("Create project from paper", systemImage: "folder.badge.plus")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+            }
+        }
+    }
+
     private func sectionTitle(_ text: String) -> some View {
         Text(text)
             .font(.headline)
+    }
+}
+
+private struct AddToProjectView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var projects: [ResearchProject] = []
+    @State private var isLoading = true
+    @State private var selectedProjectId: String?
+    @State private var error: ProjectServiceError?
+
+    let paper: Paper
+    let ownerId: String
+    let service: any ProjectService
+    let onAdded: (ResearchProject) -> Void
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if isLoading {
+                    ProgressView("Loading projects…")
+                } else if projects.isEmpty, error == nil {
+                    ContentUnavailableView(
+                        "No projects yet",
+                        systemImage: "folder",
+                        description: Text("Create a project first, then add this paper to it.")
+                    )
+                } else {
+                    List(projects) { project in
+                        Button {
+                            Task { await add(to: project) }
+                        } label: {
+                            HStack {
+                                Label(project.name, systemImage: "folder")
+                                Spacer()
+                                if selectedProjectId == project.id {
+                                    ProgressView()
+                                }
+                            }
+                        }
+                        .disabled(selectedProjectId != nil)
+                    }
+                }
+            }
+            .navigationTitle("Add to project")
+            .navigationBarTitleDisplayMode(.inline)
+            .interactiveDismissDisabled(selectedProjectId != nil)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                        .disabled(selectedProjectId != nil)
+                }
+            }
+            .task { await loadProjects() }
+            .alert("Couldn’t add paper", isPresented: Binding(
+                get: { error != nil },
+                set: { if !$0 { error = nil } }
+            )) {
+                Button("OK", role: .cancel) { error = nil }
+            } message: {
+                Text(error?.message ?? "Please try again.")
+            }
+        }
+    }
+
+    @MainActor
+    private func loadProjects() async {
+        guard isLoading else { return }
+        do {
+            projects = try await service.recentProjects(ownerId: ownerId, limit: 100)
+        } catch {
+            self.error = ProjectServiceError(error)
+        }
+        isLoading = false
+    }
+
+    @MainActor
+    private func add(to project: ResearchProject) async {
+        guard selectedProjectId == nil else { return }
+        selectedProjectId = project.id
+        do {
+            try await service.add(paper: paper, to: project, ownerId: ownerId)
+            onAdded(project)
+            dismiss()
+        } catch {
+            self.error = ProjectServiceError(error)
+            selectedProjectId = nil
+        }
+    }
+}
+
+private struct CreateProjectView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var name: String
+    @State private var isSaving = false
+    @State private var error: ProjectServiceError?
+
+    let paper: Paper
+    let ownerId: String
+    let service: any ProjectService
+    let onCreated: (ResearchProject) -> Void
+
+    init(
+        suggestedName: String,
+        paper: Paper,
+        ownerId: String,
+        service: any ProjectService,
+        onCreated: @escaping (ResearchProject) -> Void
+    ) {
+        _name = State(initialValue: suggestedName)
+        self.paper = paper
+        self.ownerId = ownerId
+        self.service = service
+        self.onCreated = onCreated
+    }
+
+    private var trimmedName: String {
+        name.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Project name") {
+                    TextField("Name", text: $name)
+                        .textInputAutocapitalization(.sentences)
+                }
+
+                if let error {
+                    Section {
+                        Label(error.message, systemImage: "exclamationmark.triangle")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .navigationTitle("New project")
+            .navigationBarTitleDisplayMode(.inline)
+            .interactiveDismissDisabled(isSaving)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                        .disabled(isSaving)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Create") {
+                        Task { await create() }
+                    }
+                    .disabled(trimmedName.isEmpty || isSaving)
+                }
+            }
+            .overlay {
+                if isSaving {
+                    ProgressView("Creating project…")
+                        .padding()
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                }
+            }
+        }
+    }
+
+    @MainActor
+    private func create() async {
+        guard !isSaving, !trimmedName.isEmpty else { return }
+        isSaving = true
+        error = nil
+        defer { isSaving = false }
+        do {
+            let project = try await service.createProject(name: trimmedName, ownerId: ownerId, paper: paper)
+            onCreated(project)
+            dismiss()
+        } catch {
+            self.error = ProjectServiceError(error)
+        }
     }
 }
 

@@ -6,8 +6,13 @@ struct ScannerView: View {
     @State private var result: ScanResult?
     @State private var errorMessage: String?
 
+    private var isRunningInPreview: Bool {
+        ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
+    }
+
     private var isScannerSupported: Bool {
-        VNDocumentCameraViewController.isSupported
+        guard !isRunningInPreview else { return false }
+        return VNDocumentCameraViewController.isSupported
     }
 
     var body: some View {

@@ -9,12 +9,19 @@ final class AuthManager: ObservableObject {
     @Published var errorMessage: String?
 
     private let service: AuthServicing
+    private let isRunningInPreview: Bool
 
     init(service: AuthServicing = ParseAuthService()) {
         self.service = service
+        self.isRunningInPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
+        if isRunningInPreview {
+            // Prevent Canvas from waiting on live auth/session recovery.
+            isCheckingSession = false
+        }
     }
 
     func restoreSession() async {
+        guard !isRunningInPreview else { return }
         guard isCheckingSession else { return }
         defer { isCheckingSession = false }
         do {

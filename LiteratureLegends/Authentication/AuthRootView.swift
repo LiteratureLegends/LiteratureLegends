@@ -3,6 +3,7 @@ import SwiftUI
 
 struct AuthRootView: View {
     @StateObject private var auth = AuthManager()
+    private let isRunningInPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
 
     var body: some View {
         Group {
@@ -19,8 +20,11 @@ struct AuthRootView: View {
             }
         }
         .tint(ProfileTheme.accent)
-        .task {
-            await auth.restoreSession()
+        .onAppear {
+            guard !isRunningInPreview else { return }
+            Task {
+                await auth.restoreSession()
+            }
         }
     }
 }
@@ -80,12 +84,6 @@ private struct AuthenticatedHomeView: View {
                 }
 
                 Section("Current development build") {
-                    NavigationLink(
-                        "Open scanner"
-                    ) {
-                        ScannerView()
-                    }
-
                     NavigationLink(
                         "Open Luis's profile preview"
                     ) {

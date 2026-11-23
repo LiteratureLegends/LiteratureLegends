@@ -31,7 +31,7 @@ struct ResetPasswordView: View {
                 .disabled(sendResetLink == nil || isSending || didSend)
             } footer: {
                 if sendResetLink == nil {
-                    Text("Password reset isn't available in this prototype yet. It will be enabled when account services are connected.")
+                    Text("Password reset by email is currently unavailable.")
                 }
             }
 

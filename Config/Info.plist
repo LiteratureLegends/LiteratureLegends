@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>OpenAlexAPIKey</key>
+	<string>$(OPENALEX_API_KEY)</string>
+	<key>GeminiAPIKey</key>
+	<string>$(GEMINI_API_KEY)</string>
+	<key>GeminiModel</key>
+	<string>$(GEMINI_MODEL)</string>
+	<key>ParseServerURL</key>
+	<string>$(PARSE_SERVER_URL)</string>
+	<key>ParseApplicationID</key>
+	<string>$(PARSE_APPLICATION_ID)</string>
+	<key>ParseRESTAPIKey</key>
+	<string>$(PARSE_REST_API_KEY)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Literature Legends uses the camera to scan research documents.</string>
+</dict>
+</plist>

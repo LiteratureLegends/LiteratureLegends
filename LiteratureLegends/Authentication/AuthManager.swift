@@ -57,6 +57,15 @@ final class AuthManager: ObservableObject {
         }
     }
 
+    func updateName(_ name: String) async throws {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        try AuthValidation.validateName(trimmed)
+        guard let user = currentUser else { throw AuthFailure.missingSession }
+        try await service.updateName(trimmed, userID: user.id)
+        guard currentUser?.id == user.id else { throw AuthFailure.missingSession }
+        currentUser?.name = trimmed
+    }
+
     func logout() async {
         guard !isWorking else { return }
         errorMessage = nil

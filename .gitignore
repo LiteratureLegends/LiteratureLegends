@@ -8,4 +8,4 @@ build/
 *.xcuserstate
 
 # Local secrets: never commit. Copy Config/Secrets.example.xcconfig to Config/Secrets.xcconfig.
-Secrets.xcconfig
+Config/Secrets.xcconfig

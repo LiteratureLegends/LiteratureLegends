@@ -62,7 +62,7 @@ struct DiscoverPageView: View {
                     MissingAPIKeyView()
                         .background(.background.secondary, in: RoundedRectangle(cornerRadius: 14))
                 }
-                ScanBannerView()
+                ScanBannerView(searchService: searchService, ownerId: user.id, projectService: projectService)
                 ContinueResearchingView(viewModel: projects)
             }
             .padding()

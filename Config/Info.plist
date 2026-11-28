@@ -14,5 +14,7 @@
 	<string>$(PARSE_APPLICATION_ID)</string>
 	<key>ParseRESTAPIKey</key>
 	<string>$(PARSE_REST_API_KEY)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Literature Legends uses the camera to scan research documents.</string>
 </dict>
 </plist>

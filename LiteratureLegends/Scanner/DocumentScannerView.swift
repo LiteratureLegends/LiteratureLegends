@@ -1,6 +1,5 @@
 import SwiftUI
 import VisionKit
-import Vision
 
 struct DocumentScannerView: UIViewControllerRepresentable {
     let onCompletion: (Result<ScanResult, Error>) -> Void
@@ -37,10 +36,12 @@ struct DocumentScannerView: UIViewControllerRepresentable {
         func documentCameraViewController(_ controller: VNDocumentCameraViewController, didFinishWith scan: VNDocumentCameraScan) {
             let pageCount = scan.pageCount
             let images = (0..<pageCount).map { scan.imageOfPage(at: $0) }
+            // Close the camera right away; recognition continues while the caller shows progress.
+            controller.dismiss(animated: true)
 
-            Task {
+            Task { @MainActor in
                 do {
-                    let extractedText = try await recognizeText(in: images)
+                    let extractedText = try await TextRecognizer.recognizeText(in: images)
                     let result = ScanResult(
                         pageCount: pageCount,
                         extractedText: extractedText,
@@ -50,36 +51,7 @@ struct DocumentScannerView: UIViewControllerRepresentable {
                 } catch {
                     onCompletion(.failure(error))
                 }
-                await MainActor.run {
-                    controller.dismiss(animated: true)
-                }
             }
-        }
-
-        private func recognizeText(in images: [UIImage]) async throws -> String {
-            var combinedText: [String] = []
-
-            for image in images {
-                guard let cgImage = image.cgImage else { continue }
-
-                let request = VNRecognizeTextRequest()
-                request.recognitionLevel = .accurate
-                request.usesLanguageCorrection = true
-
-                let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-                try handler.perform([request])
-
-                let lines = request.results?
-                    .compactMap { observation in
-                        observation.topCandidates(1).first?.string
-                    } ?? []
-
-                if !lines.isEmpty {
-                    combinedText.append(lines.joined(separator: "\n"))
-                }
-            }
-
-            return combinedText.joined(separator: "\n\n")
         }
     }
 }

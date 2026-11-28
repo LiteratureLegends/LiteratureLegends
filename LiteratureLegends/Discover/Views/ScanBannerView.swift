@@ -8,13 +8,18 @@
 import SwiftUI
 
 struct ScanBannerView: View {
+    let searchService: (any PaperSearchService)?
+    var ownerId: String?
+    var projectService: (any ProjectService)?
+
     var body: some View {
-        // TODO: Link ScannerView once Andrei's scanner is merged into main, e.g.
-        // NavigationLink { ScannerView() } label: { bannerContent }, and drop .disabled/"Coming soon".
-        Button {} label: { bannerContent }
-            .buttonStyle(.plain)
-            .disabled(true)
-            .accessibilityLabel("Scan paper, coming soon")
+        NavigationLink {
+            ScanPaperView(searchService: searchService, ownerId: ownerId, projectService: projectService)
+        } label: {
+            bannerContent
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Scan paper")
     }
 
     private var bannerContent: some View {
@@ -34,12 +39,9 @@ struct ScanBannerView: View {
 
             Spacer(minLength: 8)
 
-            Text("Coming soon")
-                .font(.caption.weight(.semibold))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(.quaternary, in: Capsule())
-                .foregroundStyle(.secondary)
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.tertiary)
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -49,5 +51,7 @@ struct ScanBannerView: View {
 }
 
 #Preview {
-    ScanBannerView().padding()
+    NavigationStack {
+        ScanBannerView(searchService: MockPaperSearchService()).padding()
+    }
 }
